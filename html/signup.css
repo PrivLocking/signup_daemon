@@ -151,3 +151,66 @@ button:hover {
         font-size: 14px;
     }
 }
+/* Additional styles for contenteditable elements */
+div[contenteditable] {
+    border: 1px solid #ccc;
+    padding: 8px;
+    min-height: 20px;
+    margin-bottom: 15px;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: white;
+}
+div[contenteditable]:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+/* Hidden real password container */
+#credential-real {
+    position: absolute;
+    left: -9999px;
+    opacity: 0;
+}
+
+/* Visual password container shows asterisks by default */
+#credential {
+    white-space: pre;  /* Preserve whitespace */
+    word-break: break-all;  /* Break long strings */
+    min-height: 38px;  /* Ensure consistent height */
+}
+
+/* Clearly visible disabled button state */
+button:disabled {
+    background-color: #cccccc !important;
+    color: #666666 !important;
+    cursor: not-allowed !important;
+    border-color: #bbbbbb !important;
+    opacity: 0.7;
+}
+
+/* Add a transition for smooth state change */
+button {
+    transition: all 0.3s ease;
+}
+
+/* Add a tooltip-style hint for disabled button */
+button:disabled::after {
+    content: "Processing...";
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    display: block;
+}
+
+/* Make submit button position relative for the tooltip positioning */
+#submit-btn {
+    position: relative;
+}
