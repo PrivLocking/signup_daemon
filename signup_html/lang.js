@@ -19,6 +19,10 @@ const messages = {
         invalid_password_chars: "Password must use only standard ASCII characters (space to })",
         password_repeating_chars: "Password must not contain the same character repeated 3 times",
         password_sequence_chars: "Password must not contain character sequences like abc, 123 or cba",
+        password_module_not_loaded: "Password processing module not loaded",
+        password_calc_failed: "Password processing failed",
+        error_get_signup_session: "Network error, can't load signup_session",
+        missing_signup_session: "Missing session cookie. Please refresh the page.",
         save_password_label: "Allow browser to save password"
     },
     cn: {
@@ -39,7 +43,11 @@ const messages = {
         password_too_short: "密码必须至少14个字符",
         invalid_password_chars: "密码只能使用标准ASCII字符（空格到}）",
         password_repeating_chars: "密码不能包含连续三个相同字符",
-        password_sequence_chars: "密码不能包含abc、123或cba之类的连续字符",
+        password_sequence_chars: "网络错误，无法加载 signup_session",
+        password_module_not_loaded: "密码处理模块未加载",
+        password_calc_failed: "密码计算失败",
+        error_get_signup_session: "Network error, can't load signup_session",
+        missing_signup_session: "缺少会话 Cookie。请刷新页面。",
         save_password_label: "是否允许浏览器保存密码"
     },
     ca: {
@@ -60,7 +68,11 @@ const messages = {
         password_too_short: "密碼必須至少14個字",
         invalid_password_chars: "密碼只能使用標準ASCII字符（空格到}）",
         password_repeating_chars: "密碼不能包含連續三個相同字符",
-        password_sequence_chars: "密碼不能包含abc、123或cba等字符序列",
+        password_sequence_chars: "網路錯誤，無法載入 signup_sessio",
+        password_module_not_loaded: "密碼處理模組未加載",
+        password_calc_failed: "密碼計算失敗",
+        error_get_signup_session: "Network error, can't load signup_session",
+        missing_signup_session: "缺少會話 cookie。請刷新頁面。",
         save_password_label: "是否允許瀏覽器儲存密碼"
     }
 };

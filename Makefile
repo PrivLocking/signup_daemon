@@ -123,8 +123,10 @@ gd:
 gc:
 	git add .
 	git commit -a
+
+#	git_ssh_example.sh git push
 up:
-	git_ssh_example.sh git push
+	git push
 	sync
 
 

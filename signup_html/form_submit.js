@@ -51,6 +51,13 @@ async function handleFormSubmit() {
         return;
     }
 
+    // Get signup_session from cookie
+    const signupSession = getCookie('signup_session');
+    if (!signupSession) {
+        if (messageElement) messageElement.textContent = msg.missing_signup_session ;
+        return;
+    }
+
     // Disable submit button and visually indicate it's processing
     if (submitButton) {
         submitButton.disabled = true;
@@ -58,12 +65,38 @@ async function handleFormSubmit() {
         submitButton.setAttribute("aria-busy", "true");
     }
 
-    // Send JSON to /signup
+    // Generate Argon2 hash using signup_session + username + sha256(passwd)
+    const argonInput = `${signupSession}:${username}:${passwdHash}`;
+    
     try {
+        // Check if Argon2 is loaded, if not, load it
+        if (typeof argon2_calc !== 'function') {
+            if (messageElement) messageElement.textContent = msg.password_module_not_loaded ;
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = msg.submit_btn;
+                submitButton.setAttribute("aria-busy", "false");
+            }
+            return;
+        }
+        
+        // Use Argon2 to hash the input
+        const argonHash = argon2_calc(argonInput);
+        if (!argonHash) {
+            if (messageElement) messageElement.textContent = msg.password_calc_failed ;
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = msg.submit_btn;
+                submitButton.setAttribute("aria-busy", "false");
+            }
+            return;
+        }
+
+        // Send JSON to /signup
         const response = await fetch("signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, passwd: passwdHash })
+            body: JSON.stringify({ username, passwd: argonHash })
         });
 
         let extraCode = 0;
@@ -76,8 +109,7 @@ async function handleFormSubmit() {
         if (status === 200) {
             // Success! Update button to "Success" state
             if (submitButton) {
-                //submitButton.textContent = "Success!";
-                submitButton.textContent = msg.success2 ;
+                submitButton.textContent = msg.success2;
                 submitButton.classList.add("success-state");
                 submitButton.setAttribute("aria-busy", "false");
             }
@@ -97,8 +129,6 @@ async function handleFormSubmit() {
                     }
                 }, 1000);
             }
-            // Keep submit button disabled during countdown
-            // No need to re-enable - it stays disabled until redirect
         } else {
             // Show status and extra code
             const errorMsg = msg.error_status
@@ -109,8 +139,7 @@ async function handleFormSubmit() {
             // Re-enable submit button on error and restore original text
             if (submitButton) {
                 submitButton.disabled = false;
-                //submitButton.textContent = "Sign Up";
-                submitButton.textContent = msg.submit_btn ;
+                submitButton.textContent = msg.submit_btn;
                 submitButton.setAttribute("aria-busy", "false");
             }
         }
@@ -123,10 +152,8 @@ async function handleFormSubmit() {
         // Re-enable submit button on error and restore original text
         if (submitButton) {
             submitButton.disabled = false;
-            //submitButton.textContent = "Sign Up";
-            submitButton.textContent = msg.submit_btn ;
+            submitButton.textContent = msg.submit_btn;
             submitButton.setAttribute("aria-busy", "false");
         }
     }
 }
-
