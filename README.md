@@ -29,3 +29,12 @@ An example how to use this signup daemon
 ## for more details :
 Please check my [Blog](https://blog00.jjj123.com/post/2025/04/20250409_234432/).
 
+## test unix socket by curl:
+```bash
+curl -nix-socket /lxc_/u99/wwwFS.out/unix.signup.sock -X POST -d '{"username":"testuser","passwd":"1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdefef"}' http://localhost/signup -v
+```
+or
+```bash
+curl -X POST -d '{"username":"testuser","passwd":"1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdefef"}' https://blog00.jjj123.com/signup/signup -v
+
+```
