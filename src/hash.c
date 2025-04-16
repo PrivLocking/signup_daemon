@@ -1,8 +1,5 @@
 #include "common.h"
 
-#include <openssl/rand.h>
-#include <argon2.h>
-
 bool compute_hash(const char *username, const char *passwd, char *hash, char *salt) {
     uint8_t salt_bytes[SALT_LEN / 2];
     if (RAND_bytes(salt_bytes, sizeof(salt_bytes)) != 1) {

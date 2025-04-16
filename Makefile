@@ -9,11 +9,18 @@ endif
 
 # your_secure_password_here1
 
-source1 := src/argon2.c
-source2 := src/http.c
-source3 := src/main.c
-source4 := src/redis.c
-source5 := src/utils.c
+# hash.c  http-parser.c  http-server.c  http-utils.c  main.c  redis-ip.c  redis-store.c  redis-user.c  redis.c  server.c  utils.c
+source1 := src/hash.c
+source2 := src/http-parser.c
+source3 := src/http-server.c
+source4 := src/http-utils.c
+source5 := src/main.c
+source6 := src/redis-ip.c
+source7 := src/redis-store.c
+source8 := src/redis-user.c
+source9 := src/redis.c
+sourceA := src/server.c
+sourceB := src/utils.c
 
 dst     := bin/signup_daemon.bin
 CFLAGS := -Wall -O3 -static
@@ -22,7 +29,7 @@ CFLAGS := -Wall -Os -ffunction-sections -fdata-sections -Wl,--gc-sections -stati
 CFLAGS := -Wall -Oz -ffunction-sections -fdata-sections -Wl,--gc-sections -static -D_FORTIFY_SOURCE=0 -DNDEBUG
 CFLAGS := -Wall -O3 -ffunction-sections -fdata-sections -Wl,--gc-sections -static
 CFLAGS := -Wall -O3 -ffunction-sections -fdata-sections -Wl,--gc-sections -static
-CFLAGS := -Wall -O3 -ffunction-sections -fdata-sections -Wl,--gc-sections 
+CFLAGS := -Wall -O3 -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDLIBS := -lgd -lpng -lz -ljpeg -lfreetype -lm -lmicrohttpd -lgnutls
 LDLIBS := -lgd -lpng -lz -ljpeg -lfreetype -lm
 LDLIBS := -lgd -lpng -lz -ljpeg -lfreetype -lm -lfontconfig -lbrotlidec -lbrotlicommon -lbz2 -lexpat
@@ -59,6 +66,8 @@ v4:
 	vim $(source4)
 v5:
 	vim $(source5)
+v6:
+	vim $(source6)
 
 aaa := make c && make ball && make in
 aaa :
@@ -86,8 +95,8 @@ in install:
 	@echo
 	-chmod   u+w   $(installDir)/
 	cat   $(dst)   > $(installBin1)
-	@ls -l --color   $(installBin1) 
-	@md5sum          $(installBin1) 
+	@ls -l --color   $(installBin1)
+	@md5sum          $(installBin1)
 	@echo
 
 vpc:
@@ -128,6 +137,12 @@ ball:
 		$(source3)   \
 		$(source4)   \
 		$(source5)   \
+		$(source6)   \
+		$(source7)   \
+		$(source8)   \
+		$(source9)   \
+		$(sourceA)   \
+		$(sourceB)   \
 		$(LDLIBS)
-	strip $(dst) 
+	strip $(dst)
 

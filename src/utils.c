@@ -1,5 +1,13 @@
 #include "common.h"
 
+void print_debug(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
+    va_end(args);
+}
+
 static void print_defaults(bool print_current, bool debug_mode, struct redis_config *redis, int *threads) {
     const char *defaults[] = {
         "DEFAULT_SOCKET_PATH",
@@ -26,14 +34,6 @@ static void print_defaults(bool print_current, bool debug_mode, struct redis_con
             printf("%s = %s\n", defaults[i], print_current ? redis->password : DEFAULT_REDIS_PASSWD);
         }
     }
-}
-
-void print_debug(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    vfprintf(stderr, fmt, args);
-    fprintf(stderr, "\n");
-    va_end(args);
 }
 
 void print_help(void) {
