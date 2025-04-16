@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Argon2id Test - Using load_argon2.js</title>
+  <style>
+    :root {
+      --primary-color: #4285f4;
+      --background-color: #f5f5f5;
+      --text-color: #333;
+      --card-bg: #fff;
+      --button-hover: #3367d6;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --primary-color: #8ab4f8;
+        --background-color: #121212;
+        --text-color: #f1f1f1;
+        --card-bg: #1e1e1e;
+        --button-hover: #aecbfa;
+      }
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1 {
+      color: var(--primary-color);
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 1.8rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      display: block;
+      width: 100%;
+      max-width: 200px;
+      margin: 0 auto 20px;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: var(--button-hover);
+    }
+
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    #output {
+      background-color: var(--card-bg);
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-family: monospace;
+      min-height: 100px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 549px) {
+      .container {
+        padding: 10px;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+        margin-bottom: 20px;
+      }
+
+      .card {
+        padding: 15px;
+      }
+
+      button {
+        padding: 10px 20px;
+        max-width: 100%;
+      }
+
+      #output {
+        padding: 10px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+  <script src="load_argon2.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Argon2id Test with load_argon2.js (3 runs)</h1>
+    
+    <div class="card">
+      <button id="runButton" disabled>Run Test</button>
+      <pre id="output">Initializing Argon2 WASM module...</pre>
+    </div>
+  </div>
+
+  <script>
+    // Get DOM elements
+    const runButton = document.getElementById('runButton');
+    const output = document.getElementById('output');
+    
+    // Log function
+    function log(message) {
+      output.textContent += message + '\n';
+      console.log(message);
+    }
+    
+    function clearLog() {
+      output.textContent = '';
+    }
+    
+    // Performance measurement
+    function now() {
+      return performance ? performance.now() : Date.now();
+    }
+    
+    // Initialize Argon2
+    argon2Ready(function() {
+      log("Argon2 WASM loaded successfully!");
+      log("Ready to run tests.");
+      runButton.disabled = false;
+    });
+    
+    // Run the test
+    runButton.addEventListener('click', function() {
+      runButton.disabled = true;
+      clearLog();
+      log("Running 3 Argon2id hashes...");
+      
+      const testMessage = "demo_password";
+      let completedHashes = 0;
+      const startTime = now();
+      
+      // Run hashes sequentially
+      function runNextHash() {
+        if (completedHashes >= 3) {
+          const endTime = now();
+          const totalTime = Math.round(endTime - startTime);
+          log(`\nAll tests completed!`);
+          log(`Total time: ${totalTime} ms`);
+          log(`Average per hash: ${Math.round(totalTime / 3)} ms`);
+          runButton.disabled = false;
+          return;
+        }
+        
+        // Calculate hash with a slight modification to prevent any caching
+        const messageWithCounter = testMessage + "_" + completedHashes;
+        const hash = argon2_calc(messageWithCounter);
+        
+        if (hash) {
+          completedHashes++;
+          if (completedHashes % 10 === 0) {
+            log(`Completed ${completedHashes} hashes...`);
+          }
+          // Use setTimeout to prevent UI freezing and allow for progress updates
+          setTimeout(runNextHash, 0);
+        } else {
+          log(`Error calculating hash at iteration ${completedHashes}`);
+          runButton.disabled = false;
+        }
+      }
+      
+      // Start the hash calculation process
+      log("WASM loading count will be monitored in console...");
+      // Add a small delay to ensure UI updates before starting intensive work
+      setTimeout(runNextHash, 10);
+    });
+    
+    // Monitor network requests to detect multiple WASM loads
+    // This is a basic implementation and may not work in all browsers
+    const originalXHROpen = XMLHttpRequest.prototype.open;
+    let wasmLoadCount = 0;
+    
+    XMLHttpRequest.prototype.open = function(method, url) {
+      if (url.includes('argon2.wasm')) {
+        wasmLoadCount++;
+        console.log(`WASM load attempt detected! Total: ${wasmLoadCount}`);
+      }
+      return originalXHROpen.apply(this, arguments);
+    };
+  </script>
+</body>
+</html>

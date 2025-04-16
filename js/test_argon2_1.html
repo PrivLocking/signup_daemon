@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Argon2 Hash Demo</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .result {
+      font-family: monospace;
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px 0;
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      cursor: pointer;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 20px;
+    }
+  </style>
+  <script src="load_argon2.js"></script>
+</head>
+<body>
+  <h1>Argon2 Hash Calculator</h1>
+  
+  <div>
+    <label for="message">Enter message to hash:</label>
+    <input type="text" id="message" value="test message">
+    <button id="calculate" disabled>Calculate Hash</button>
+  </div>
+  
+  <div>
+    <h3>Result:</h3>
+    <div id="status">Loading Argon2 WASM module...</div>
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    // Get DOM elements
+    const messageInput = document.getElementById('message');
+    const calculateButton = document.getElementById('calculate');
+    const statusElement = document.getElementById('status');
+    const resultElement = document.getElementById('result');
+    
+    // Initialize Argon2
+    argon2Ready(function() {
+      statusElement.textContent = "Argon2 ready";
+      calculateButton.disabled = false;
+    });
+    
+    // Set up click handler
+    calculateButton.addEventListener('click', function() {
+      const message = messageInput.value;
+      statusElement.textContent = "Calculating...";
+      
+      // Small timeout to allow UI to update
+      setTimeout(function() {
+        const hash = argon2_calc(message);
+        
+        if (hash) {
+          statusElement.textContent = "Hash calculated successfully";
+          resultElement.textContent = hash;
+        } else {
+          statusElement.textContent = "Error calculating hash";
+          resultElement.textContent = "";
+        }
+      }, 10);
+    });
+  </script>
+</body>
+</html>
