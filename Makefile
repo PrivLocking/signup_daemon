@@ -10,18 +10,25 @@ endif
 # your_secure_password_here1
 
 # hash.c  http-parser.c  http-server.c  http-utils.c  main.c  redis-ip.c  redis-store.c  redis-user.c  redis.c  server.c  utils.c
-source1 := src/hash.c
-source2 := src/http-parser.c
-source3 := src/http-server.c
-source4 := src/http-utils.c
-source5 := src/main.c
-source6 := src/redis_check_ip.c
-source7 := src/redis_increment_failed.c
-source8 := src/redis-store.c
-source9 := src/redis-user.c
-sourceA := src/redis.c
-sourceB := src/server.c
-sourceC := src/utils.c
+source1 := src/gen_a_new_md5sum_hex_32byte.c
+source2 := src/hash.c
+source3 := src/http-parser.c
+source4 := src/http-server.c
+source5 := src/http-utils.c
+source6 := src/main.c
+source7 := src/redis_check_ip.c
+source8 := src/redis_find_signup_sess_and_reset_its_TTL300.c
+source9 := src/redis_increment_failed.c
+sourceA := src/redis_save_signup_sess_with_TTL300.c
+sourceB := src/redis-store.c
+sourceC := src/redis-user.c
+sourceD := src/redis.c
+sourceE := src/send_response_with_new_signup_sess.c
+sourceF := src/server.c
+sourceG := src/utils.c
+
+
+
 
 dst     := bin/signup_daemon.bin
 CFLAGS := -Wall -O3 -static
@@ -147,6 +154,10 @@ ball:
 		$(sourceA)   \
 		$(sourceB)   \
 		$(sourceC)   \
+		$(sourceD)   \
+		$(sourceE)   \
+		$(sourceF)   \
+		$(sourceG)   \
 		$(LDLIBS)
 	strip $(dst)
 
