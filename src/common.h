@@ -95,4 +95,7 @@ bool redis_save_signup_sess_with_TTL300(const char *signup_sess, struct redis_co
 void gen_a_new_md5sum_hex_32byte(char *output) ;
 void send_response_with_new_signup_sess(int client_fd, int status, const char *signup_sess) ;
 
+int get_executable_md5(unsigned char *md5_digest) ;
+char *get_executable_md5_hex(void) ;
+
 #endif /* COMMON_H */

@@ -19,6 +19,8 @@ int main(int argc, char *argv[]) {
     }
     redis_conf.debug_mode = debug_mode;
 
+    print_debug("Executable file's md5 is [%s]\n", get_executable_md5_hex() );
+
     if (setup_server_socket() == -1) {
         return 1;
     }

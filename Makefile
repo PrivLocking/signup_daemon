@@ -26,6 +26,7 @@ sourceD := src/redis.c
 sourceE := src/send_response_with_new_signup_sess.c
 sourceF := src/server.c
 sourceG := src/utils.c
+sourceH := src/get_executable_md5.c
 
 
 
@@ -158,6 +159,7 @@ ball:
 		$(sourceE)   \
 		$(sourceF)   \
 		$(sourceG)   \
+		$(sourceH)   \
 		$(LDLIBS)
 	strip $(dst)
 

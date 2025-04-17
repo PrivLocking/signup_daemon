@@ -1,4 +1,5 @@
 src/gen_a_new_md5sum_hex_32byte.c
+src/get_executable_md5.c
 src/hash.c
 src/http-parser.c
 src/http-server.c
