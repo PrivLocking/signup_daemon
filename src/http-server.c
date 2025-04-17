@@ -59,6 +59,38 @@ void http_serve(void) {
         }
         body += 4;
 
+        /*
+        int len = strlen( body ) ;
+        http_print_debug("body len (%d):[%s]", len, body );
+        if ( 2 == len && '{' == body[0] && '}' == body[1] ){
+            char *cookie_session = strstr(buffer, "signup_session=");
+            if (cookie_session) {
+                char signup_sess[33] = {0};
+                int sessLen = sscanf(cookie_session, "signup_session=%32s", signup_sess);
+                if ( 32 != sessLen ) {
+                    http_print_debug("signup_session len error: %d : [%s]", sessLen, signup_sess );
+                    send_response(client_fd, 422, "Unprocessable Entity", "21");
+                } else {
+                    if ( !redis_find_signup_sess_and_reset_its_TTL300( signup_sess, redis_conf )) { // try to find current signup_sess from redis
+                        // not found old signup_sess
+                        gen_a_new_md5sum_hex_32byte( signup_sess ) ;
+                        redis_save_signup_sess_with_TTL300( signup_sess, redis_conf ) ;
+                        send_response_with_new_signup_sess(client_fd, 200, signup_sess );
+                    } else {
+                        send_response(client_fd, 422, "Unprocessable Entity", signup_sess ); // no new session is needed.
+                    }
+                }
+            } else {
+                http_print_debug("no signup_session found. try to gen it." );
+                gen_a_new_md5sum_hex_32byte( signup_sess ) ;
+                redis_save_signup_sess_with_TTL300( signup_sess, redis_conf ) ;
+                send_response_with_new_signup_sess(client_fd, 200, signup_sess );
+            }
+            close(client_fd);
+            continue;
+        }
+        */
+
         struct signup_request req = { NULL, NULL };
         if (!parse_json(body, &req)) {
             send_response(client_fd, 422, "Unprocessable Entity", "12");

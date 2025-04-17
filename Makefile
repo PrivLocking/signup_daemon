@@ -15,12 +15,13 @@ source2 := src/http-parser.c
 source3 := src/http-server.c
 source4 := src/http-utils.c
 source5 := src/main.c
-source6 := src/redis-ip.c
-source7 := src/redis-store.c
-source8 := src/redis-user.c
-source9 := src/redis.c
-sourceA := src/server.c
-sourceB := src/utils.c
+source6 := src/redis_check_ip.c
+source7 := src/redis_increment_failed.c
+source8 := src/redis-store.c
+source9 := src/redis-user.c
+sourceA := src/redis.c
+sourceB := src/server.c
+sourceC := src/utils.c
 
 dst     := bin/signup_daemon.bin
 CFLAGS := -Wall -O3 -static
@@ -145,6 +146,7 @@ ball:
 		$(source9)   \
 		$(sourceA)   \
 		$(sourceB)   \
+		$(sourceC)   \
 		$(LDLIBS)
 	strip $(dst)
 
