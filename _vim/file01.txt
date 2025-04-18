@@ -1,3 +1,4 @@
+src/common.h
 src/gen_a_new_md5sum_hex_32byte.c
 src/get_executable_md5.c
 src/hash.c
@@ -11,7 +12,9 @@ src/redis.c
 src/redis_check_ip.c
 src/redis_find_signup_sess_and_reset_its_TTL300.c
 src/redis_increment_failed.c
+src/redis_save_key_to_redis_with_ttl.c
 src/redis_save_signup_sess_with_TTL300.c
+src/send_response.c
 src/send_response_with_new_signup_sess.c
 src/server.c
 src/utils.c

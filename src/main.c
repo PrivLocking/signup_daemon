@@ -4,8 +4,8 @@ extern int setup_server_socket(void);
 extern void setup_signal_handlers(void);
 extern void *thread_worker(void *arg);
 
+bool debug_mode = false;
 int main(int argc, char *argv[]) {
-    bool debug_mode = false;
     int num_threads = DEFAULT_THREADS;
     struct redis_config redis_conf = {
         .path = DEFAULT_REDIS_PATH,
@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     }
     redis_conf.debug_mode = debug_mode;
 
-    print_debug("Executable file's md5 is [%s]\n", get_executable_md5_hex() );
+    DBprint_debug("Executable file's md5 is [%s]\n", get_executable_md5_hex() );
 
     if (setup_server_socket() == -1) {
         return 1;

@@ -19,14 +19,16 @@ source6 := src/main.c
 source7 := src/redis_check_ip.c
 source8 := src/redis_find_signup_sess_and_reset_its_TTL300.c
 source9 := src/redis_increment_failed.c
-sourceA := src/redis_save_signup_sess_with_TTL300.c
-sourceB := src/redis-store.c
-sourceC := src/redis-user.c
-sourceD := src/redis.c
-sourceE := src/send_response_with_new_signup_sess.c
-sourceF := src/server.c
-sourceG := src/utils.c
-sourceH := src/get_executable_md5.c
+sourceA := src/redis_save_key_to_redis_with_ttl.c
+sourceB := src/redis_save_signup_sess_with_TTL300.c
+sourceC := src/redis-store.c
+sourceD := src/redis-user.c
+sourceE := src/redis.c
+sourceF := src/send_response.c
+sourceG := src/send_response_with_new_signup_sess.c
+sourceH := src/server.c
+sourceI := src/utils.c
+sourceJ := src/get_executable_md5.c
 
 
 
@@ -119,7 +121,7 @@ vp vim_prepare : vpc
 	mkdir -p _vim/
 	echo $(Makefile)                                     > _vim/file01.txt
 	-test -f Makefile.env && echo Makefile.env          >> _vim/file01.txt
-	find -type f -name "*.c" \
+	find -type f -name "*.c" -o -name "*.h" \
 		|grep -v '\.bak[0-9]*' \
 		| xargs -n 1 realpath --relative-to=.|sort -u   >> _vim/file01.txt
 	sed -i -e '/^\.$$/d' -e '/^$$/d'                       _vim/file01.txt
@@ -160,6 +162,8 @@ ball:
 		$(sourceF)   \
 		$(sourceG)   \
 		$(sourceH)   \
+		$(sourceI)   \
+		$(sourceJ)   \
 		$(LDLIBS)
 	strip $(dst)
 

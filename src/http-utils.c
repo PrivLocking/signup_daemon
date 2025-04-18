@@ -112,25 +112,3 @@ char *get_client_ip(int client_fd, const char *buffer) {
     return strdup("127.0.0.2");
 }
 
-void send_response(int client_fd, int status, const char *status_text, const char *return_context) {
-    char response[512];  // Increased buffer size for safety
-    int content_length = 0;
-    const char *body = "";
-
-    if (return_context != NULL) {
-        body = return_context;
-        content_length = strlen(return_context);
-    }
-
-    snprintf(response, sizeof(response),
-             "HTTP/1.1 %d %s\r\n"
-             "Content-Length: %d\r\n"
-             "Cache-Control: no-cache, no-store\r\n"
-             "\r\n"
-             "%s",
-             status, status_text,
-             content_length,
-             body);
-
-    write(client_fd, response, strlen(response));
-}

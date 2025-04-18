@@ -50,6 +50,7 @@ struct signup_request {
     char *passwd;
 };
 
+extern bool debug_mode ;
 struct redis_config {
     char *path;
     bool is_unix;
@@ -61,7 +62,11 @@ struct redis_config {
 
 /* Debug and utility functions */
 void print_debug(const char *fmt, ...);
+#define DBprint_debug(fmt, ...) do { if (debug_mode) { print_debug(fmt, ##__VA_ARGS__); } } while (0)
+void print_debug_rn( const char * buf );
+#define DBprint_debug_rn(fmt, ...) do { if (debug_mode) { print_debug_rn(fmt, ##__VA_ARGS__); } } while (0)
 void http_print_debug(const char *fmt, ...);
+#define DBhttp_print_debug(fmt, ...) do { if (debug_mode) { http_print_debug(fmt, ##__VA_ARGS__); } } while (0)
 void print_help(void);
 bool parse_args(int argc, char *argv[], bool *debug, int *threads, struct redis_config *redis);
 
@@ -71,6 +76,9 @@ bool redis_check_username(const char *username, struct redis_config *conf);
 bool redis_store_user(const char *username, const char *hash, const char *salt, const char *ip, struct redis_config *conf);
 bool redis_increment_failed(const char *ip, struct redis_config *conf);
 bool redis_connect_thread(struct redis_config *conf);
+bool redis_find_signup_sess_and_reset_its_TTL300(const char *signup_sess, struct redis_config *conf) ;
+bool redis_save_signup_sess_with_TTL300(const char *signup_sess, struct redis_config *conf) ;
+bool redis_save_key_to_redis_with_ttl(char databaseIdx, int TTL, const char *str1, const char *str2, const char *val, struct redis_config *conf) ;
 
 /* Hash computation */
 bool compute_hash(const char *username, const char *passwd, char *hash, char *salt);
@@ -84,14 +92,12 @@ const char *extract_client_ip(const char *http_request);
 bool parse_json(const char *body, struct signup_request *req);
 bool validate_username(const char *username);
 bool validate_passwd(const char *passwd);
-void send_response(int client_fd, int status, const char *status_text, const char *return_context);
+void send_response(int client_fd, int status, const char *status_text, const char *return_fmt, ...) ;
 char *get_client_ip(int client_fd, const char *buffer);
 
 /* Thread functions */
 void *thread_worker(void *arg);
 
-bool redis_find_signup_sess_and_reset_its_TTL300(const char *signup_sess, struct redis_config *conf) ;
-bool redis_save_signup_sess_with_TTL300(const char *signup_sess, struct redis_config *conf) ;
 void gen_a_new_md5sum_hex_32byte(char *output) ;
 void send_response_with_new_signup_sess(int client_fd, int status, const char *signup_sess) ;
 

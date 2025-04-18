@@ -1,8 +1,6 @@
 #include "common.h"
 
-extern bool redis_connect_thread(struct redis_config *conf);
-
-bool redis_save_signup_sess_with_TTL300(const char *signup_sess, struct redis_config *conf) {
+bool redis_save_key_to_redis_with_ttl(char databaseIdx, int TTL, const char *str1, const char *str2, const char *val, struct redis_config *conf) {
     if (!redis_connect_thread(conf)) return false;
 
     redisContext *ctx = NULL;
@@ -23,7 +21,8 @@ bool redis_save_signup_sess_with_TTL300(const char *signup_sess, struct redis_co
     }
     freeReplyObject(reply);
 
-    reply = redisCommand(ctx, "SELECT 5");
+    //reply = redisCommand(ctx, "SELECT 5");
+    reply = redisCommand(ctx, "SELECT %d", databaseIdx );
     if (!reply || reply->type == REDIS_REPLY_ERROR) {
         print_debug("Redis SELECT 5 failed: %s", reply ? reply->str : "null reply");
         if (reply) freeReplyObject(reply);
@@ -33,12 +32,12 @@ bool redis_save_signup_sess_with_TTL300(const char *signup_sess, struct redis_co
     freeReplyObject(reply);
 
     // Store session with 300 seconds TTL
-    reply = redisCommand(ctx, "SET signup_sess:%s 1 EX 300", signup_sess);
+    reply = redisCommand(ctx, "SET %s:%s %s EX %d", str1, str2, val, TTL);
     if (conf->debug_mode) {
-        print_debug("Sent: SET signup_sess:%s 1 EX 300 | Received: %s", signup_sess, reply ? reply->str : "null");
+        print_debug("Sent: SET %s:%s %s EX %d | Received: %s", str1, str2, val, TTL, reply ? reply->str : "null");
     }
     if (!reply || reply->type == REDIS_REPLY_ERROR) {
-        print_debug("Redis SET signup_sess:%s failed", signup_sess);
+        print_debug("Redis SET %s:%s %s EX %d failed", str1, str2, val, TTL);
         if (reply) freeReplyObject(reply);
         redisFree(ctx);
         return false;
@@ -48,4 +47,3 @@ bool redis_save_signup_sess_with_TTL300(const char *signup_sess, struct redis_co
     redisFree(ctx);
     return true;
 }
-
