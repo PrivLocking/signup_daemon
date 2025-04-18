@@ -99,11 +99,23 @@ void http_serve(void) {
                 send_response_with_new_signup_sess(client_fd, 200, signup_sess);
             }
             */
+            char *ip = get_client_ip(client_fd, buffer);
+            if ( ip ) {
+                if (!redis_check_ip(ip, redis_conf)) {
+                    DBhttp_print_debug("IP check failed for %s", ip);
+                    send_response(client_fd, 422, "Unprocessable Entity", "21");
+                    free(ip);
+                    close(client_fd);
+                    continue;
+                }
+                free(ip);
+            }
             char signup_sess[33] = {0}; // Declare once, used in both branches
+            char signup_sesv[33] = {0}; // Declare once, used in both branches
             gen_a_new_md5sum_hex_32byte(signup_sess);
-            redis_save_key_to_redis_with_ttl(5, 300, "signup_sess", signup_sess, "1", redis_conf);
-            //send_response_with_new_signup_sess(client_fd, 200, signup_sess);
-            send_response(client_fd, 200, "OK", "{\"ver\": 1, \"signup_sess\": \"%s\"}", signup_sess);
+            gen_a_new_md5sum_hex_32byte(signup_sesv);
+            redis_save_key_to_redis_with_ttl(5, 300, "signup_sess", signup_sess, signup_sesv, redis_conf);
+            send_response(client_fd, 200, "OK", "{\"ver\": 1, \"signup_sess\": \"%s\"}", signup_sesv);
             close(client_fd);
             continue;
         }
