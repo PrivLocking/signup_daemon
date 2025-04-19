@@ -8,9 +8,10 @@
   // Configuration for Argon2
   const DEFAULT_CONFIG = {
     time: 2,            // Iterations
-    mem: 65536,         // Memory (64 MB)
+    //mem: 65536,         // Memory (64 MB)
+    mem: 131072,        // Memory (128 MB)
     hashLen: 32,        // Output hash length
-    parallelism: 1,     // Parallelism factor
+    parallelism: 2,     // Parallelism factor
     type: 2             // Argon2id (0=Argon2d, 1=Argon2i, 2=Argon2id)
   };
 

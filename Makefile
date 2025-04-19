@@ -167,3 +167,6 @@ ball:
 		$(LDLIBS)
 	strip $(dst)
 
+sign signup:
+	( cd signup_html/ && tar -cf - .) | ( cd signup_for_publish/ && tar -xf - )
+	diff -r signup_html/ signup_for_publish/ 2>&1 |grep -v 'No such file or directory'
