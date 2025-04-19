@@ -27,57 +27,6 @@ function getCookie(name) {
     return null;
 }
 
-// Request session cookie if not exists
-async function checkSessionCookie() {
-    const messageElement = document.getElementById("message");
-    const submitButton = document.getElementById("submit-btn");
-    
-    if (!getCookie('signup_session')) {
-        // Disable submit button while getting session
-        if (submitButton) {
-            submitButton.disabled = true;
-        }
-        
-        const msg = getMessages(getCurrentLanguage());
-        // Wait a bit before making the request
-        setTimeout(async () => {
-            try {
-                const response = await fetch("signup", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({})
-                });
-                
-                if (response.ok) {
-                    // Successfully set cookie, refresh after a short delay
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 100);
-                } else {
-                    if (messageElement) {
-                        messageElement.textContent = msg.password_sequence_chars ;
-                    }
-                }
-            } catch (e) {
-                if (messageElement) {
-                    messageElement.textContent = msg.password_sequence_chars ;
-                }
-            }
-        }, 100);
-    }
-}
-
-// Initialize Argon2
-function initializeArgon2() {
-    if (typeof argon2Ready === 'function') {
-        argon2Ready(function() {
-            console.log("Argon2 initialized successfully");
-        });
-    } else {
-        console.error("Argon2 module not found");
-    }
-}
-
 // Initialize the form
 document.addEventListener("DOMContentLoaded", () => {
     initializeUI();
@@ -89,9 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Initialize Argon2
     initializeArgon2();
-    
-    // Check for session cookie
-    checkSessionCookie();
     
     // Add CSS for success state
     const style = document.createElement('style');
@@ -128,3 +74,14 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
     document.head.appendChild(style);
 });
+
+// Initialize Argon2
+function initializeArgon2() {
+    if (typeof argon2Ready === 'function') {
+        argon2Ready(function() {
+            console.log("Argon2 initialized successfully");
+        });
+    } else {
+        console.error("Argon2 module not found");
+    }
+}

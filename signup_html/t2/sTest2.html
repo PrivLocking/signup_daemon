@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Argon2 Password Hash Calculator</title>
+  <link rel="stylesheet" href="sTest2.css">
+  <script src="load_argon2.js"></script>
+  <!-- Removed CryptoJS dependency as we're using Web Crypto API -->
+  <!-- <script src="crypto-js.min.js"></script> -->
+  <!-- Added defer attribute to ensure the script runs after the DOM is loaded -->
+  <script src="sTest2.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Argon2 Password Hash Calculator</h1>
+    
+    <div class="status loading" id="status">Loading Argon2 WASM module...</div>
+    
+    <div class="tabs">
+      <div class="tab active" data-tab="signup">Signup</div>
+      <div class="tab" data-tab="login">Login</div>
+    </div>
+    
+    <div class="tab-content active" id="signup-tab">
+      <div class="form-group">
+        <label for="signup-username">Username:</label>
+        <div class="input-container">
+          <input type="text" id="signup-username" placeholder="Enter username">
+          <button type="button" class="clear-button" data-for="signup-username">✕</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="signup-password">Password:</label>
+        <div class="input-container">
+          <input type="text" id="signup-password" placeholder="Enter password">
+          <button type="button" class="clear-button" data-for="signup-password">✕</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="signup-session">Signup Session (32 hex chars):</label>
+        <div class="input-container">
+          <input type="text" id="signup-session" placeholder="Enter or generate signup session">
+          <button type="button" class="clear-button" data-for="signup-session">✕</button>
+        </div>
+        <button id="generate-session" class="mt-2">Generate SignUp Session/Salt</button>
+      </div>
+      
+      <h3>Argon2 Parameters</h3>
+      <div class="parameter-group">
+        <div class="parameter-item">
+          <label for="time">Iterations (time):</label>
+          <input type="number" id="time" value="2" min="1">
+        </div>
+        
+        <div class="parameter-item">
+          <label for="mem">Memory (KB):</label>
+          <input type="number" id="mem" value="131072" min="8192" step="8192">
+        </div>
+        
+        <div class="parameter-item">
+          <label for="parallelism">Parallelism:</label>
+          <input type="number" id="parallelism" value="2" min="1" max="16">
+        </div>
+        
+        <div class="parameter-item">
+          <label for="hash-length">Hash Length:</label>
+          <input type="number" id="hash-length" value="32" min="16">
+        </div>
+      </div>
+      
+      <button id="calculate-signup" disabled>Calculate Signup Hash</button>
+      
+      <div class="result-section">
+        <h3>Results:</h3>
+        
+        <h4>Step 1: Salt + Username + Password</h4>
+        <div class="result-box" id="salt-username-pwd"></div>
+        
+        <h4>Step 2: Argon2 Hash of Step 1</h4>
+        <div class="result-box" id="argon2-hash"></div>
+        
+        <h4>Step 3: SHA256 of Argon2 Hash</h4>
+        <div class="result-box" id="sha256-hash"></div>
+        
+        <h4>Final JSON Payload </h4>
+        <h6>sha256_argon2_salt_username_password</h6>
+        <div class="result-box" id="signup-json"></div>
+      </div>
+    </div>
+    
+    <div class="tab-content" id="login-tab">
+      <div class="form-group">
+        <label for="login-username">Username:</label>
+        <div class="input-container">
+          <input type="text" id="login-username" placeholder="Enter username">
+          <button type="button" class="clear-button" data-for="login-username">✕</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="login-password">Password:</label>
+        <div class="input-container">
+          <input type="text" id="login-password" placeholder="Enter password">
+          <button type="button" class="clear-button" data-for="login-password">✕</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="signup-session-login">Original Signup Session:</label>
+        <div class="input-container">
+          <input type="text" id="signup-session-login" placeholder="Enter original signup session">
+          <button type="button" class="clear-button" data-for="signup-session-login">✕</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="login-session">Login Session (32 hex chars):</label>
+        <div class="input-container">
+          <input type="text" id="login-session" placeholder="Enter login session">
+          <button type="button" class="clear-button" data-for="login-session">✕</button>
+        </div>
+        <button id="generate-login-session" class="mt-2">Generate Login Session/Salt</button>
+      </div>
+      
+      <button id="calculate-login" disabled>Calculate Login Hash</button>
+      
+      <div class="result-section">
+        <h3>Results:</h3>
+        
+        <h4>Step 1: Salt + Username + Password</h4>
+        <div class="result-box" id="login-salt-username-pwd"></div>
+        
+        <h4>Step 2: Argon2 Hash of Step 1</h4>
+        <div class="result-box" id="login-argon2-hash"></div>
+        
+        <h4>Step 3: SHA256 of Argon2 Hash (signup hash)</h4>
+        <div class="result-box" id="login-sha256-hash"></div>
+        
+        <h4>Step 4: Login Session + Signup Hash</h4>
+        <div class="result-box" id="login-session-hash"></div>
+        
+        <h4>Step 5: Argon2 Hash of Step 4</h4>
+        <div class="result-box" id="login-argon2-final"></div>
+        
+        <h4>Step 6: SHA256 of Step 5</h4>
+        <div class="result-box" id="login-sha256-final"></div>
+        
+        <h4>Final JSON Payload</h4>
+        <div class="result-box" id="login-json"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

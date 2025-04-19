@@ -196,7 +196,7 @@ button {
 
 /* Add a tooltip-style hint for disabled button */
 button:disabled::after {
-    content: "Processing...";
+    content: "Processing....";
     position: absolute;
     bottom: -25px;
     left: 50%;
