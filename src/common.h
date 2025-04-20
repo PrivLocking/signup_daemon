@@ -59,6 +59,7 @@ struct redis_config {
     bool debug_mode;
 };
 
+extern char execBinaryMd5[] ;
 /* Function declarations */
 
 /* Debug and utility functions */
@@ -72,7 +73,7 @@ void print_help(void);
 bool parse_args(int argc, char *argv[], bool *debug, int *threads, struct redis_config *redis);
 
 /* Redis functions */
-bool redis_check_ip(const char *ip, struct redis_config *conf);
+int redis_check_ip(const char *ip, struct redis_config *conf);
 bool redis_check_username(const char *username, struct redis_config *conf);
 bool redis_store_user(const char *username, const char *hash, const char *salt, const char *ip, struct redis_config *conf);
 bool redis_increment_failed(const char *ip, struct redis_config *conf);

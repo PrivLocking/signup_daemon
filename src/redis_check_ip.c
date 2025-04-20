@@ -2,8 +2,8 @@
 
 extern bool redis_connect_thread(struct redis_config *conf);
 
-bool redis_check_ip(const char *ip, struct redis_config *conf) {
-    if (!redis_connect_thread(conf)) return false;
+int redis_check_ip(const char *ip, struct redis_config *conf) {
+    if (!redis_connect_thread(conf)) return 111001;
 
     redisContext *ctx = NULL;
     struct timeval timeout = { REDIS_TIMEOUT_SEC, 0 };
@@ -11,7 +11,7 @@ bool redis_check_ip(const char *ip, struct redis_config *conf) {
     if (!ctx || ctx->err) {
         print_debug("Redis connect failed on %s: %s", conf->path, ctx ? ctx->errstr : "null context");
         if (ctx) redisFree(ctx);
-        return false;
+        return 111003;
     }
 
     redisReply *reply = redisCommand(ctx, "AUTH %s", conf->password);
@@ -19,7 +19,7 @@ bool redis_check_ip(const char *ip, struct redis_config *conf) {
         print_debug("Redis AUTH failed: %s", reply ? reply->str : "null reply");
         if (reply) freeReplyObject(reply);
         redisFree(ctx);
-        return false;
+        return 111005;
     }
     freeReplyObject(reply);
 
@@ -28,7 +28,7 @@ bool redis_check_ip(const char *ip, struct redis_config *conf) {
         print_debug("Redis SELECT 5 failed: %s", reply ? reply->str : "null reply");
         if (reply) freeReplyObject(reply);
         redisFree(ctx);
-        return false;
+        return 111007;
     }
     freeReplyObject(reply);
 
@@ -40,7 +40,7 @@ bool redis_check_ip(const char *ip, struct redis_config *conf) {
         print_debug("Redis EXISTS signupOK:%s failed", ip);
         if (reply) freeReplyObject(reply);
         redisFree(ctx);
-        return false;
+        return 111009;
     }
     bool exists = reply->integer == 1;
     freeReplyObject(reply);
@@ -63,7 +63,7 @@ bool redis_check_ip(const char *ip, struct redis_config *conf) {
             if (reply) freeReplyObject(reply);
         }
         redisFree(ctx);
-        return false;
+        return 111011; // signupOK exist. please retry 3600s later
     }
 
     reply = redisCommand(ctx, "GET signupFailed:%s:count", ip);
@@ -77,7 +77,7 @@ bool redis_check_ip(const char *ip, struct redis_config *conf) {
         print_debug("Redis GET signupFailed:%s:count failed", ip);
         if (reply) freeReplyObject(reply);
         redisFree(ctx);
-        return false;
+        return 111013;
     }
     freeReplyObject(reply);
 
@@ -90,7 +90,7 @@ bool redis_check_ip(const char *ip, struct redis_config *conf) {
             print_debug("Redis INCR signupFailed:%s:count failed", ip);
             if (reply) freeReplyObject(reply);
             redisFree(ctx);
-            return false;
+            return 111015;
         }
         freeReplyObject(reply);
 
@@ -102,15 +102,15 @@ bool redis_check_ip(const char *ip, struct redis_config *conf) {
             print_debug("Redis EXPIRE signupFailed:%s:count failed", ip);
             if (reply) freeReplyObject(reply);
             redisFree(ctx);
-            return false;
+            return 111017;
         }
         freeReplyObject(reply);
 
         redisFree(ctx);
-        return false;
+        return 111019;
     }
 
     redisFree(ctx);
-    return true;
+    return 0;
 }
 

@@ -48,7 +48,7 @@ function getMessages(lang) {
         password_repeating_chars: "Password contains repeating characters",
         password_sequence_chars: "Password contains sequential characters",
         invalid_password: "Invalid password",
-        missing_signup_session: "Missing signup session",
+        too_more_tries: "Missing signup session",
         error_get_signup_session: "Error getting signup session",
         password_module_not_loaded: "Password module not loaded",
         password_calc_failed: "Password calculation failed",

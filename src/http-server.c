@@ -31,7 +31,7 @@ void http_serve(void) {
             continue;
         }
 
-        DBhttp_print_debug("Accepted client connection");
+        DBhttp_print_debug("Accepted client connection: ================================ [%s]\n", execBinaryMd5);
 
         char buffer[REQUEST_MAX_SIZE + 1];
         ssize_t n = read(client_fd, buffer, REQUEST_MAX_SIZE);
@@ -101,9 +101,10 @@ void http_serve(void) {
             */
             char *ip = get_client_ip(client_fd, buffer);
             if ( ip ) {
-                if (!redis_check_ip(ip, redis_conf)) {
-                    DBhttp_print_debug("IP check failed for %s", ip);
-                    send_response(client_fd, 422, "Unprocessable Entity", "31");
+                int rt = redis_check_ip(ip, redis_conf) ;
+                if (rt) {
+                    DBhttp_print_debug("IP check failed for %s : %d", ip, rt);
+                    send_response(client_fd, 422, "Unprocessable Entity", "31:%d", rt);
                     free(ip);
                     close(client_fd);
                     continue;
@@ -145,9 +146,10 @@ void http_serve(void) {
         }
 
         char *ip = get_client_ip(client_fd, buffer);
-        if (!redis_check_ip(ip, redis_conf)) {
+        int rt = redis_check_ip(ip, redis_conf) ;
+        if (rt) {
             DBhttp_print_debug("IP check failed for %s", ip);
-            send_response(client_fd, 422, "Unprocessable Entity", "16");
+            send_response(client_fd, 422, "Unprocessable Entity", "16:%d", rt);
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);

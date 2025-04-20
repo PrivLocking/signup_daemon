@@ -19,7 +19,9 @@ function handleSessionError(messageElement, submitButton, messages) {
  * Requests a new signup session from the server
  * @returns {Promise<string|null>} - Session ID or null if failed
  */
+let requestSignupSession_body = "" ;
 async function requestSignupSession(messageElement, submitButton, messages) {
+    requestSignupSession_body = "" ;
     try {
         const sessionResponse = await fetch("signup", {
             method: "POST",
@@ -40,6 +42,7 @@ async function requestSignupSession(messageElement, submitButton, messages) {
                 if (jsonResponse.ver !== 1) {
                     console.log("Unsupported JSON version:", jsonResponse.ver);
                     handleSessionError(messageElement, submitButton, messages);
+                    requestSignupSession_body = "Unsupported JSON version" ;
                     return null;
                 }
                 
@@ -52,12 +55,14 @@ async function requestSignupSession(messageElement, submitButton, messages) {
                 } else {
                     console.log("JSON response contained invalid session format:", jsonResponse.signup_sess);
                     handleSessionError(messageElement, submitButton, messages);
+                    requestSignupSession_body = "JSON response contained invalid session format" ;
                     return null;
                 }
             } catch (jsonError) {
                 // If JSON parsing fails, return error immediately
                 console.error("Failed to parse response as JSON:", jsonError);
                 handleSessionError(messageElement, submitButton, messages);
+                requestSignupSession_body = "Failed to parse response as JSON" ;
                 return null;
             }
             
@@ -71,13 +76,15 @@ async function requestSignupSession(messageElement, submitButton, messages) {
             */
             
             return sessionId || null;
-        } else {
+        } else { // sessionResponse not ok, maybe , 422
             handleSessionError(messageElement, submitButton, messages);
+            requestSignupSession_body = await sessionResponse.text();
             return null;
         }
     } catch (e) {
         console.error("Error requesting signup session:", e);
         handleSessionError(messageElement, submitButton, messages);
+        requestSignupSession_body = "Error requesting signup session" ;
         return null;
     }
 }

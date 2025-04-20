@@ -90,17 +90,17 @@ int get_executable_md5(unsigned char *md5_digest) {
     return calculate_file_md5(path, md5_digest);
 }
 
+char execBinaryMd5[33] = "errorExecBinaryMD5";
 char *get_executable_md5_hex(void) {
-    static char rtBuf33[33] = "errorMD5";
     static unsigned char md5_digest[EVP_MAX_MD_SIZE];
-    char * p = rtBuf33 ;
+    char * p = execBinaryMd5 ;
     if (get_executable_md5(md5_digest)) {
-        printf("MD5 hash of the executable: ");
         for (int i = 0; i < 16; i++) {
             sprintf(p, "%02x", md5_digest[i]);
             p += 2 ;
         }
-        rtBuf33[32] = 0 ;
+        execBinaryMd5[32] = 0 ;
     }
-    return rtBuf33;
+    DBprint_debug("Executable file's md5 is [%s]\n", execBinaryMd5 );
+    return execBinaryMd5;
 }

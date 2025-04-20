@@ -82,6 +82,7 @@ v6:
 
 aaa := make c && make ball && make in
 aaa :
+	make sign
 	$(aaa)
 
 

@@ -15,7 +15,7 @@ async function getOrCreateSignupSession(messageElement, submitButton, messages) 
         
         // If we still don't have a session, show error
         if (!signupSession) {
-            if (messageElement) messageElement.textContent = messages.missing_signup_session;
+            if (messageElement) messageElement.textContent = messages.too_more_tries + ":" + requestSignupSession_body ;
             if (submitButton) {
                 submitButton.disabled = false;
                 submitButton.textContent = messages.submit_btn;

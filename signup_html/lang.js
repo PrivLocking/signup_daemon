@@ -22,7 +22,7 @@ const messages = {
         password_module_not_loaded: "Password processing module not loaded",
         password_calc_failed: "Password processing failed",
         error_get_signup_session: "Network error, can't load signup_session",
-        missing_signup_session: "Missing session cookie. Please refresh the page.",
+        too_more_tries: "Too more tries. Please retry later.",
         save_password_label: "Allow browser to save password"
     },
     cn: {
@@ -47,7 +47,7 @@ const messages = {
         password_module_not_loaded: "密码处理模块未加载",
         password_calc_failed: "密码计算失败",
         error_get_signup_session: "Network error, can't load signup_session",
-        missing_signup_session: "缺少会话 Cookie。请刷新页面。",
+        too_more_tries: "尝试次数过多。请稍后重试。",
         save_password_label: "是否允许浏览器保存密码"
     },
     ca: {
@@ -72,7 +72,7 @@ const messages = {
         password_module_not_loaded: "密碼處理模組未加載",
         password_calc_failed: "密碼計算失敗",
         error_get_signup_session: "Network error, can't load signup_session",
-        missing_signup_session: "缺少會話 cookie。請刷新頁面。",
+        too_more_tries: "嘗試次數過多。請稍後重試。",
         save_password_label: "是否允許瀏覽器儲存密碼"
     }
 };
