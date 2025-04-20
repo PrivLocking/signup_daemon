@@ -48,6 +48,7 @@
 struct signup_request {
     char *username;
     char *passwd;
+    char *signup_salt;
 };
 
 extern bool debug_mode ;
@@ -92,6 +93,7 @@ const char *extract_client_ip(const char *http_request);
 bool parse_json(const char *body, struct signup_request *req);
 bool validate_username(const char *username);
 bool validate_passwd(const char *passwd);
+bool validate_salt(const char *salt) ;
 void send_response(int client_fd, int status, const char *status_text, const char *return_fmt, ...) ;
 char *get_client_ip(int client_fd, const char *buffer);
 

@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
     calculateLoginButton.disabled = false;
     
     // Show generate button once Argon2 is ready
-    generateSessionButton.style.display = 'block';
+    generateSessionButton.style.display = 'none';
   });
 
   // Generate random hex string

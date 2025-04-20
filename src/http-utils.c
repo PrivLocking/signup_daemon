@@ -53,7 +53,33 @@ bool validate_passwd(const char *passwd) {
         DBhttp_print_debug("Password validation failed: all zeros");
         return false;
     }
-    return !all_zero;
+    return true;
+}
+
+bool validate_salt(const char *salt) {
+    if (!salt || strlen(salt) != SALT_LEN) {
+        DBhttp_print_debug("Salt validation failed: length %zu (expected %d)",
+                         salt ? strlen(salt) : 0, SALT_LEN);
+        return false;
+    }
+    for (size_t i = 0; i < SALT_LEN; i++) {
+        if (!isdigit(salt[i]) && !(salt[i] >= 'a' && salt[i] <= 'f')) {
+            DBhttp_print_debug("Salt validation failed: non-hex char at pos %zu", i);
+            return false;
+        }
+    }
+    bool all_zero = true;
+    for (size_t i = 0; i < SALT_LEN; i++) {
+        if (salt[i] != '0') {
+            all_zero = false;
+            break;
+        }
+    }
+    if (all_zero) {
+        DBhttp_print_debug("Salt validation failed: all zeros");
+        return false;
+    }
+    return true;
 }
 
 char *get_client_ip(int client_fd, const char *buffer) {

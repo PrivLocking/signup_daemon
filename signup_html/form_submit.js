@@ -81,7 +81,8 @@ async function handleFormSubmit() {
         const status = response.status;
         if (status === 422) {
             const body = await response.text();
-            extraCode = parseInt(body, 10) || 0;
+            //extraCode = parseInt(body, 10) || 0;
+            extraCode = body ;
         }
 
         if (status === 200) {

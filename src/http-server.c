@@ -81,7 +81,7 @@ void http_serve(void) {
 
                 if (i != 32) {
                     DBhttp_print_debug("signup_session len error: %d : [%s]", i, signup_sess);
-                    send_response(client_fd, 422, "Unprocessable Entity", "21");
+                    send_response(client_fd, 422, "Unprocessable Entity", "31");
                 } else {
                     if (!redis_find_signup_sess_and_reset_its_TTL300(signup_sess, redis_conf)) {
                         // not found old signup_sess
@@ -103,7 +103,7 @@ void http_serve(void) {
             if ( ip ) {
                 if (!redis_check_ip(ip, redis_conf)) {
                     DBhttp_print_debug("IP check failed for %s", ip);
-                    send_response(client_fd, 422, "Unprocessable Entity", "21");
+                    send_response(client_fd, 422, "Unprocessable Entity", "31");
                     free(ip);
                     close(client_fd);
                     continue;
@@ -121,19 +121,25 @@ void http_serve(void) {
         }
 
 
-        struct signup_request req = { NULL, NULL };
+        struct signup_request req = { NULL, NULL, NULL };
         if (!parse_json(body, &req)) {
             send_response(client_fd, 422, "Unprocessable Entity", "12");
             if (req.username) free(req.username);
             if (req.passwd) free(req.passwd);
+            if (req.signup_salt) free(req.signup_salt);
             close(client_fd);
             continue;
         }
 
-        if (!validate_username(req.username) || !validate_passwd(req.passwd)) {
-            send_response(client_fd, 422, "Unprocessable Entity", "13");
+        char subCode = 0 ;
+        if ( !validate_username(req.username) ) subCode |= 1;
+        if ( !validate_passwd(req.passwd) )     subCode |= 2;
+        if ( !validate_salt(req.signup_salt) )  subCode |= 4;
+        if ( subCode ) {
+            send_response(client_fd, 422, "Unprocessable Entity", "14:%d", subCode );
             free(req.username);
             free(req.passwd);
+            free(req.signup_salt);
             close(client_fd);
             continue;
         }
@@ -141,9 +147,10 @@ void http_serve(void) {
         char *ip = get_client_ip(client_fd, buffer);
         if (!redis_check_ip(ip, redis_conf)) {
             DBhttp_print_debug("IP check failed for %s", ip);
-            send_response(client_fd, 422, "Unprocessable Entity", "14");
+            send_response(client_fd, 422, "Unprocessable Entity", "16");
             free(req.username);
             free(req.passwd);
+            free(req.signup_salt);
             free(ip);
             close(client_fd);
             continue;
@@ -152,9 +159,10 @@ void http_serve(void) {
         if (!redis_check_username(req.username, redis_conf)) {
             DBhttp_print_debug("Username check failed for %s", req.username);
             redis_increment_failed(ip, redis_conf);
-            send_response(client_fd, 422, "Unprocessable Entity", "15");
+            send_response(client_fd, 422, "Unprocessable Entity", "18");
             free(req.username);
             free(req.passwd);
+            free(req.signup_salt);
             free(ip);
             close(client_fd);
             continue;
@@ -164,9 +172,10 @@ void http_serve(void) {
         if (!compute_hash(req.username, req.passwd, hash, salt)) {
             DBhttp_print_debug("Hash computation failed");
             redis_increment_failed(ip, redis_conf);
-            send_response(client_fd, 422, "Unprocessable Entity", "16");
+            send_response(client_fd, 422, "Unprocessable Entity", "20");
             free(req.username);
             free(req.passwd);
+            free(req.signup_salt);
             free(ip);
             close(client_fd);
             continue;
@@ -178,6 +187,7 @@ void http_serve(void) {
             send_response(client_fd, 503, "Service Unavailable", NULL);
             free(req.username);
             free(req.passwd);
+            free(req.signup_salt);
             free(ip);
             close(client_fd);
             continue;
@@ -187,6 +197,7 @@ void http_serve(void) {
         send_response(client_fd, 200, "OK", NULL);
         free(req.username);
         free(req.passwd);
+        free(req.signup_salt);
         free(ip);
         close(client_fd);
     }

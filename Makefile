@@ -124,6 +124,7 @@ vp vim_prepare : vpc
 	find -type f -name "*.c" -o -name "*.h" \
 		|grep -v '\.bak[0-9]*' \
 		| xargs -n 1 realpath --relative-to=.|sort -u   >> _vim/file01.txt
+	find signup_html/ -maxdepth 1 -type f               >> _vim/file01.txt
 	sed -i -e '/^\.$$/d' -e '/^$$/d'                       _vim/file01.txt
 	cscope -q -R -b -i                                     _vim/file01.txt
 	ctags -L                                               _vim/file01.txt
@@ -169,4 +170,4 @@ ball:
 
 sign signup:
 	( cd signup_html/ && tar -cf - .) | ( cd signup_for_publish/ && tar -xf - )
-	diff -r signup_html/ signup_for_publish/ 2>&1 |grep -v 'No such file or directory'
+	-diff -r signup_html/ signup_for_publish/ 2>&1 |grep -v 'No such file or directory'
