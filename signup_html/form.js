@@ -30,7 +30,7 @@ function getCookie(name) {
 // Initialize the form
 document.addEventListener("DOMContentLoaded", () => {
     initializeUI();
-    setupPasswordListeners();
+    //setupPasswordListeners();
     setupFormSubmit();
     
     // Initialize password field

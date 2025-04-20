@@ -1,11 +1,14 @@
 // Setup password-related event listeners
+let setupPasswordListeners_mointor_debug = false ;
 function setupPasswordListeners() {
-    // Add stack trace logging to see where this function is being called from
-    console.log("setupPasswordListeners called from:");
-    try {
-        throw new Error("Call stack trace");
-    } catch (e) {
-        console.log(e.stack);
+    if ( setupPasswordListeners_mointor_debug ) {
+        // Add stack trace logging to see where this function is being called from
+        console.log("setupPasswordListeners called from:");
+        try {
+            throw new Error("Call stack trace");
+        } catch (e) {
+            console.log(e.stack);
+        }
     }
 
     const passwordField = document.getElementById("credential");
