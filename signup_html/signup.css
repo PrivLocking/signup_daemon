@@ -127,6 +127,12 @@ button:hover {
 }
 
 @media (max-width: 549px) {
+    .clear-button {
+        width: 18px;
+        height: 18px;
+        line-height: 18px;
+        font-size: 14px;
+    }
     .container {
         padding: 15px;
     }
@@ -155,7 +161,8 @@ button:hover {
 div[contenteditable] {
     border: 1px solid #ccc;
     padding: 8px;
-    min-height: 20px;
+    min-height: 38px;
+    max-height: 38px;
     margin-bottom: 15px;
     width: 100%;
     box-sizing: border-box;
@@ -171,25 +178,41 @@ div[contenteditable]:focus {
     position: relative;
     margin-bottom: 15px;
     width: 100%;
+    display: flex;
+    align-items: center; /* <-- aligns children vertically */
 }
 
 /* Clear button styling */
 .clear-button {
     position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
+    right: 8px;
+    top: 3px; /* align to top of input */
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    font-size: 20px;
+    background-color: #f0f0f0;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     color: #999;
-    font-size: 16px;
-    width: 18px;
-    height: 18px;
-    line-height: 18px;
-    text-align: center;
+    transition: all 0.2s ease;
+    user-select: none;
+    box-sizing: border-box;
 }
 
 .clear-button:hover {
-    color: #333;
+    background-color: #e0e0e0;
+    color: #666;
+    border-color: #ccc;
+}
+
+.clear-button:active {
+    background-color: #d0d0d0;
+    transform: translateY(-50%) scale(0.95);
 }
 
 /* Hidden real password container */
@@ -204,6 +227,7 @@ div[contenteditable]:focus {
     white-space: pre;  /* Preserve whitespace */
     word-break: break-all;  /* Break long strings */
     min-height: 38px;  /* Ensure consistent height */
+    max-height: 38px;
 }
 
 /* Clearly visible disabled button state */
