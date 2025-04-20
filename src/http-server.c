@@ -158,10 +158,11 @@ void http_serve(void) {
             continue;
         }
 
-        if (!redis_check_username(req.username, redis_conf)) {
+        rt = redis_check_username(req.username, redis_conf) ;
+        if ( rt ) {
             DBhttp_print_debug("Username check failed for %s", req.username);
             redis_increment_failed(ip, redis_conf);
-            send_response(client_fd, 422, "Unprocessable Entity", "18");
+            send_response(client_fd, 422, "Unprocessable Entity", "18:%d", rt); // username exist,
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);

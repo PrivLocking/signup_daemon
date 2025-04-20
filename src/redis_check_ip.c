@@ -63,7 +63,7 @@ int redis_check_ip(const char *ip, struct redis_config *conf) {
             if (reply) freeReplyObject(reply);
         }
         redisFree(ctx);
-        return 111011; // signupOK exist. please retry 3600s later
+        return 111011; // signupOK found. in 3600s don't allow more than once success regiester. please retry 3600s later
     }
 
     reply = redisCommand(ctx, "GET signupFailed:%s:count", ip);
@@ -107,7 +107,7 @@ int redis_check_ip(const char *ip, struct redis_config *conf) {
         freeReplyObject(reply);
 
         redisFree(ctx);
-        return 111019;
+        return 111019; // counter > 5 
     }
 
     redisFree(ctx);

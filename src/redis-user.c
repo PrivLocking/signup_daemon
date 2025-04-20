@@ -2,8 +2,8 @@
 
 extern bool redis_connect_thread(struct redis_config *conf);
 
-bool redis_check_username(const char *username, struct redis_config *conf) {
-    if (!redis_connect_thread(conf)) return false;
+int redis_check_username(const char *username, struct redis_config *conf) {
+    if (!redis_connect_thread(conf)) return 122001;
 
     redisContext *ctx = NULL;
     struct timeval timeout = { REDIS_TIMEOUT_SEC, 0 };
@@ -11,7 +11,7 @@ bool redis_check_username(const char *username, struct redis_config *conf) {
     if (!ctx || ctx->err) {
         print_debug("Redis connect failed on %s: %s", conf->path, ctx ? ctx->errstr : "null context");
         if (ctx) redisFree(ctx);
-        return false;
+        return 122003;
     }
 
     redisReply *reply = redisCommand(ctx, "AUTH %s", conf->password);
@@ -19,7 +19,7 @@ bool redis_check_username(const char *username, struct redis_config *conf) {
         print_debug("Redis AUTH failed: %s", reply ? reply->str : "null reply");
         if (reply) freeReplyObject(reply);
         redisFree(ctx);
-        return false;
+        return 122005;
     }
     freeReplyObject(reply);
 
@@ -31,7 +31,7 @@ bool redis_check_username(const char *username, struct redis_config *conf) {
         print_debug("Redis SELECT 0 failed");
         if (reply) freeReplyObject(reply);
         redisFree(ctx);
-        return false;
+        return 122007;
     }
     freeReplyObject(reply);
 
@@ -43,13 +43,13 @@ bool redis_check_username(const char *username, struct redis_config *conf) {
         print_debug("Redis EXISTS user:%s failed", username);
         if (reply) freeReplyObject(reply);
         redisFree(ctx);
-        return false;
+        return 122009;
     }
     bool exists = reply->integer == 1;
     freeReplyObject(reply);
     if (exists) {
         redisFree(ctx);
-        return false;
+        return 122011; // the submitted username already exist in database 0.
     }
 
     reply = redisCommand(ctx, "SELECT 5");
@@ -60,7 +60,7 @@ bool redis_check_username(const char *username, struct redis_config *conf) {
         print_debug("Redis SELECT 5 failed");
         if (reply) freeReplyObject(reply);
         redisFree(ctx);
-        return false;
+        return 122013;
     }
     freeReplyObject(reply);
 
@@ -72,7 +72,7 @@ bool redis_check_username(const char *username, struct redis_config *conf) {
         print_debug("Redis SET signlock:%s failed", username);
         if (reply) freeReplyObject(reply);
         redisFree(ctx);
-        return false;
+        return 122015;
     }
     freeReplyObject(reply);
 
@@ -84,7 +84,7 @@ bool redis_check_username(const char *username, struct redis_config *conf) {
         print_debug("Redis SELECT 0 failed");
         if (reply) freeReplyObject(reply);
         redisFree(ctx);
-        return false;
+        return 122017;
     }
     freeReplyObject(reply);
 
@@ -96,11 +96,12 @@ bool redis_check_username(const char *username, struct redis_config *conf) {
         print_debug("Redis EXISTS user:%s failed", username);
         if (reply) freeReplyObject(reply);
         redisFree(ctx);
-        return false;
+        return 122019;
     }
     exists = reply->integer == 1;
     freeReplyObject(reply);
 
     redisFree(ctx);
-    return !exists;
+    if ( exists ) return 122021 ; // double check, and found the same as sumbmitted username, so, another client submitted it.
+    return 0 ;
 }

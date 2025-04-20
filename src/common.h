@@ -74,7 +74,7 @@ bool parse_args(int argc, char *argv[], bool *debug, int *threads, struct redis_
 
 /* Redis functions */
 int redis_check_ip(const char *ip, struct redis_config *conf);
-bool redis_check_username(const char *username, struct redis_config *conf);
+int redis_check_username(const char *username, struct redis_config *conf);
 bool redis_store_user(const char *username, const char *hash, const char *salt, const char *ip, struct redis_config *conf);
 bool redis_increment_failed(const char *ip, struct redis_config *conf);
 bool redis_connect_thread(struct redis_config *conf);
