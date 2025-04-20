@@ -57,6 +57,7 @@ function updatePasswordPreview() {
         preview.textContent = grouped;
 
     }
+    if ( preview.textContent === null || preview.textContent === undefined || preview.textContent === "") { preview.textContent = "."; }
     preview.setAttribute("aria-hidden", "true");
 }
 

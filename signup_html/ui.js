@@ -49,5 +49,6 @@ function placeCaretAtEnd(el) {
 function initializeUI() {
     setupLanguageListener();
     setupUsernameListener();
+    setupClearButtonListeners();
     setupPasswordListeners();
 }

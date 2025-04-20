@@ -16,11 +16,17 @@
         </select>
         <form id="signup-form" autocomplete="off">
             <label for="identity" id="username-label">Username:</label>
-            <div id="identity" contenteditable="true" class="editable-field" data-field-type="username"></div>
+            <div class="editable-field-container">
+                <div id="identity" contenteditable="true" class="editable-field" data-field-type="username"></div>
+                <span class="clear-button" id="clear-username">×</span>
+            </div>
 
             <label for="credential" id="password-label">Password: (Length: 0)</label>
-            <div id="credential" contenteditable="true" class="editable-field" data-field-type="password"></div>
-            <div id="credential-real" aria-hidden="true"></div>
+            <div class="editable-field-container">
+                <div id="credential" contenteditable="true" class="editable-field" data-field-type="password"></div>
+                <span class="clear-button" id="clear-password">×</span>
+                <div id="credential-real" aria-hidden="true"></div>
+            </div>
             <div id="password-preview" aria-hidden="true">.</div>
 
             <div class="checkbox-row">

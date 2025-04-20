@@ -38,3 +38,27 @@ function setupUsernameListener() {
     }
 }
 
+// Setup clear button listeners
+function setupClearButtonListeners() {
+    const clearUsername = document.getElementById("clear-username");
+    const clearPassword = document.getElementById("clear-password");
+    const usernameField = document.getElementById("identity");
+    const passwordField = document.getElementById("credential");
+
+    if (clearUsername && usernameField) {
+        clearUsername.addEventListener("click", function() {
+            usernameField.textContent = "";
+            usernameField.focus();
+        });
+    }
+
+    if (clearPassword && passwordField) {
+        clearPassword.addEventListener("click", function() {
+            passwordField.textContent = "";
+            realPassword = "";
+            updatePasswordLabelLength();
+            renderPassword();
+            passwordField.focus();
+        });
+    }
+}
