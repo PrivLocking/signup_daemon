@@ -56,7 +56,7 @@ bool validate_passwd(const char *passwd) {
     return true;
 }
 
-bool validate_salt(const char *salt) {
+bool validate_signup_salt(const char *salt) {
     if (!salt || strlen(salt) != SALT_LEN) {
         DBhttp_print_debug("Salt validation failed: length %zu (expected %d)",
                          salt ? strlen(salt) : 0, SALT_LEN);

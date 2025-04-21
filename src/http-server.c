@@ -115,27 +115,31 @@ void http_serve(void) {
             char signup_sesv[33] = {0}; // Declare once, used in both branches
             gen_a_new_md5sum_hex_32byte(signup_sess);
             gen_a_new_md5sum_hex_32byte(signup_sesv);
-            redis_save_key_to_redis_with_ttl(5, 300, "signup_sess", signup_sess, signup_sesv, redis_conf);
-            send_response(client_fd, 200, "OK", "{\"ver\": 1, \"signup_sess\": \"%s\"}", signup_sesv);
+            redis_save_key_to_redis_with_ttl(5, 300, "signup_sess", signup_sesv, signup_sess, redis_conf);
+            //send_response(client_fd, 200, "OK", "{\"ver\": 1, \"signup_sess\": \"%s\"}", signup_sesv);
+            send_response_with_new_signup_sess(client_fd, 200, signup_sess, signup_sesv);
+
             close(client_fd);
             continue;
         }
 
 
         struct signup_request req = { NULL, NULL, NULL };
-        if (!parse_json(body, &req)) {
-            send_response(client_fd, 422, "Unprocessable Entity", "12");
+        int rt = parse_signup_json(body, &req) ;
+        if (rt) {
+            send_response(client_fd, 422, "Unprocessable Entity", "12:%d", rt);
             if (req.username) free(req.username);
             if (req.passwd) free(req.passwd);
             if (req.signup_salt) free(req.signup_salt);
+            // please notice : here , we must check the req.xxx, it maybe NULL. after that, it must be not NULL, and no more check is needed.
             close(client_fd);
             continue;
         }
 
         char subCode = 0 ;
-        if ( !validate_username(req.username) ) subCode |= 1;
-        if ( !validate_passwd(req.passwd) )     subCode |= 2;
-        if ( !validate_salt(req.signup_salt) )  subCode |= 4;
+        if ( !validate_username(req.username) )        subCode |= 1;
+        if ( !validate_passwd(req.passwd) )            subCode |= 2;
+        if ( !validate_signup_salt(req.signup_salt) )  subCode |= 4;
         if ( subCode ) {
             send_response(client_fd, 422, "Unprocessable Entity", "14:%d", subCode );
             free(req.username);
@@ -145,11 +149,46 @@ void http_serve(void) {
             continue;
         }
 
+        char dbSavedSignUpSalt[33] ;
+        rt = redis_get_string(redis_conf, 5, 32, dbSavedSignUpSalt, "signup_sess:%d", req.signup_salt ) ;
+        if ( rt ) {
+            DBhttp_print_debug("no such a signup salt found!" );
+            send_response(client_fd, 422, "Unprocessable Entity", "16:%d", rt );
+            free(req.username);
+            free(req.passwd);
+            free(req.signup_salt);
+            close(client_fd);
+            continue;
+        }
+
+        char signUpCookieBuf[33] ;
+        rt = cookie_extract(buffer, n, signUpCookieBuf, sizeof(signUpCookieBuf), "signup_session" );
+        if ( rt ) {
+            DBhttp_print_debug("no such a signup salt found!" );
+            send_response(client_fd, 422, "Unprocessable Entity", "18:%d", rt );
+            free(req.username);
+            free(req.passwd);
+            free(req.signup_salt);
+            close(client_fd);
+            continue;
+        }
+
+        rt = strncmp( dbSavedSignUpSalt, signUpCookieBuf, 33 );
+        if ( 0 != rt ) {
+            DBhttp_print_debug(" dbSavedSignUpSalt[%s] and signUpCookieBuf[%s] not equal", dbSavedSignUpSalt, signUpCookieBuf );
+            send_response(client_fd, 422, "Unprocessable Entity", "20");
+            free(req.username);
+            free(req.passwd);
+            free(req.signup_salt);
+            close(client_fd);
+            continue;
+        }
+
         char *ip = get_client_ip(client_fd, buffer);
-        int rt = redis_check_ip(ip, redis_conf) ;
+        rt = redis_check_ip(ip, redis_conf) ;
         if (rt) {
             DBhttp_print_debug("IP check failed for %s", ip);
-            send_response(client_fd, 422, "Unprocessable Entity", "16:%d", rt);
+            send_response(client_fd, 422, "Unprocessable Entity", "22:%d", rt);
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
@@ -162,7 +201,7 @@ void http_serve(void) {
         if ( rt ) {
             DBhttp_print_debug("Username check failed for %s", req.username);
             redis_increment_failed(ip, redis_conf);
-            send_response(client_fd, 422, "Unprocessable Entity", "18:%d", rt); // username exist,
+            send_response(client_fd, 422, "Unprocessable Entity", "24:%d", rt); // username exist,
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
@@ -175,7 +214,7 @@ void http_serve(void) {
         if (!compute_hash(req.username, req.passwd, hash, salt)) {
             DBhttp_print_debug("Hash computation failed");
             redis_increment_failed(ip, redis_conf);
-            send_response(client_fd, 422, "Unprocessable Entity", "20");
+            send_response(client_fd, 422, "Unprocessable Entity", "26");
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);

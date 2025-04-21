@@ -91,10 +91,10 @@ void http_serve(void);
 int http_should_keep_running(void);
 int get_server_fd(void);
 const char *extract_client_ip(const char *http_request);
-bool parse_json(const char *body, struct signup_request *req);
+bool parse_signup_json(const char *body, struct signup_request *req);
 bool validate_username(const char *username);
 bool validate_passwd(const char *passwd);
-bool validate_salt(const char *salt) ;
+bool validate_signup_salt(const char *salt) ;
 void send_response(int client_fd, int status, const char *status_text, const char *return_fmt, ...) ;
 char *get_client_ip(int client_fd, const char *buffer);
 
@@ -102,9 +102,12 @@ char *get_client_ip(int client_fd, const char *buffer);
 void *thread_worker(void *arg);
 
 void gen_a_new_md5sum_hex_32byte(char *output) ;
-void send_response_with_new_signup_sess(int client_fd, int status, const char *signup_sess) ;
+void send_response_with_new_signup_sess(int client_fd, int status, const char *signup_sess, const char *signup_sesv) ;
 
 int get_executable_md5(unsigned char *md5_digest) ;
 char *get_executable_md5_hex(void) ;
+bool string_check_a2f_0to9( char * buf , int len ) ;
+int cookie_extract(const char *buffer, size_t n, char *output_buf, size_t output_buf_size, const char *cookie_name) ;
+int redis_get_string(struct redis_config *conf, int databaseIdx, int dstLen, char *dstBuf, const char *fmt, ... ) ;
 
 #endif /* COMMON_H */

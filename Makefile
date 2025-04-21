@@ -10,6 +10,7 @@ endif
 # your_secure_password_here1
 
 # hash.c  http-parser.c  http-server.c  http-utils.c  main.c  redis-ip.c  redis-store.c  redis-user.c  redis.c  server.c  utils.c
+source0 := src/cookie_extract.c
 source1 := src/gen_a_new_md5sum_hex_32byte.c
 source2 := src/hash.c
 source3 := src/http-parser.c
@@ -24,11 +25,13 @@ sourceB := src/redis_save_signup_sess_with_TTL300.c
 sourceC := src/redis-store.c
 sourceD := src/redis-user.c
 sourceE := src/redis.c
-sourceF := src/send_response.c
-sourceG := src/send_response_with_new_signup_sess.c
-sourceH := src/server.c
-sourceI := src/utils.c
-sourceJ := src/get_executable_md5.c
+sourceF := src/redis_get_string.c
+sourceG := src/send_response.c
+sourceH := src/send_response_with_new_signup_sess.c
+sourceI := src/server.c
+sourceJ := src/string_check_a2f_0to9.c
+sourceK := src/utils.c
+sourceL := src/get_executable_md5.c
 
 
 
@@ -147,6 +150,7 @@ up:
 
 ball:
 	$(CC) $(CFLAGS) -static -o $(dst) \
+		$(source0)   \
 		$(source1)   \
 		$(source2)   \
 		$(source3)   \
@@ -166,6 +170,8 @@ ball:
 		$(sourceH)   \
 		$(sourceI)   \
 		$(sourceJ)   \
+		$(sourceK)   \
+		$(sourceL)   \
 		$(LDLIBS)
 	strip $(dst)
 
