@@ -26,13 +26,16 @@ sourceC := src/redis-store.c
 sourceD := src/redis-user.c
 sourceE := src/redis.c
 sourceF := src/redis_get_string.c
-sourceG := src/send_response.c
-sourceH := src/send_response_with_new_signup_sess.c
-sourceI := src/server.c
-sourceJ := src/string_check_a2f_0to9.c
-sourceK := src/utils.c
-sourceL := src/get_executable_md5.c
+sourceG := src/redis_get_int.c
+sourceH := src/send_response.c
+sourceI := src/send_response_with_new_signup_sess.c
+sourceJ := src/server.c
+sourceK := src/string_check_a2f_0to9.c
+sourceL := src/utils.c
+sourceM := src/get_executable_md5.c
 
+sourceListIdx:=0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M
+sourceList:=$(foreach ssss,$(sourceListIdx),$(source$(ssss)))
 
 
 
@@ -70,18 +73,16 @@ v:v1
 
 m:
 	vim Makefile
-v1:
-	vim $(source1)
-v2:
-	vim $(source2)
-v3:
-	vim $(source3)
-v4:
-	vim $(source4)
-v5:
-	vim $(source5)
-v6:
-	vim $(source6)
+
+#v1:
+#	vim $(source1)
+define vimFun
+v$(1): vp
+	vim $(source$(1))
+endef
+$(foreach vimvim,$(sourceListIdx),$(eval $(call vimFun,$(vimvim))))
+vv:
+	@$(foreach ssss,$(sourceListIdx), echo "$(ssss) : $(source$(ssss))"; )
 
 aaa := make c && make ball && make in
 aaa :
@@ -150,28 +151,7 @@ up:
 
 ball:
 	$(CC) $(CFLAGS) -static -o $(dst) \
-		$(source0)   \
-		$(source1)   \
-		$(source2)   \
-		$(source3)   \
-		$(source4)   \
-		$(source5)   \
-		$(source6)   \
-		$(source7)   \
-		$(source8)   \
-		$(source9)   \
-		$(sourceA)   \
-		$(sourceB)   \
-		$(sourceC)   \
-		$(sourceD)   \
-		$(sourceE)   \
-		$(sourceF)   \
-		$(sourceG)   \
-		$(sourceH)   \
-		$(sourceI)   \
-		$(sourceJ)   \
-		$(sourceK)   \
-		$(sourceL)   \
+		$(sourceList)   \
 		$(LDLIBS)
 	strip $(dst)
 

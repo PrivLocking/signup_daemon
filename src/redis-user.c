@@ -1,9 +1,7 @@
 #include "common.h"
 
-extern bool redis_connect_thread(struct redis_config *conf);
-
 int redis_check_username(const char *username, struct redis_config *conf) {
-    if (!redis_connect_thread(conf)) return 122001;
+    if (!redis_connect_thread(conf, 5)) return 122001;
 
     redisContext *ctx = NULL;
     struct timeval timeout = { REDIS_TIMEOUT_SEC, 0 };

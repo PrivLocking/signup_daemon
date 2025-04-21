@@ -19,6 +19,8 @@
 #define SALT_LEN 32
 #define HASH_LEN 96
 #define DEFAULT_REDIS_PASSWD "default_captcha_passwd"
+#define REDIS_TYPE "STRING:1, ARRAY:2, INTEGER:3, NIL:4, STATUS(OK):5, ERROR:6" 
+// REDIS_REPLY_STRING REDIS_REPLY_INTEGER 
 
 /* Standard library includes */
 #include <stdio.h>
@@ -77,7 +79,7 @@ int redis_check_ip(const char *ip, struct redis_config *conf);
 int redis_check_username(const char *username, struct redis_config *conf);
 bool redis_store_user(const char *username, const char *hash, const char *salt, const char *ip, struct redis_config *conf);
 bool redis_increment_failed(const char *ip, struct redis_config *conf);
-bool redis_connect_thread(struct redis_config *conf);
+bool redis_connect_thread(struct redis_config *conf, int dbIdx);
 bool redis_find_signup_sess_and_reset_its_TTL300(const char *signup_sess, struct redis_config *conf) ;
 bool redis_save_signup_sess_with_TTL300(const char *signup_sess, struct redis_config *conf) ;
 bool redis_save_key_to_redis_with_ttl(char databaseIdx, int TTL, const char *str1, const char *str2, const char *val, struct redis_config *conf) ;
@@ -109,5 +111,8 @@ char *get_executable_md5_hex(void) ;
 bool string_check_a2f_0to9( char * buf , int len ) ;
 int cookie_extract(const char *buffer, size_t n, char *output_buf, size_t output_buf_size, const char *cookie_name) ;
 int redis_get_string(struct redis_config *conf, int databaseIdx, int dstLen, char *dstBuf, const char *fmt, ... ) ;
+
+extern __thread redisContext *ctx ;
+extern __thread int current_dbIdx ;
 
 #endif /* COMMON_H */

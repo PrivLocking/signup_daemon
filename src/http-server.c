@@ -31,26 +31,36 @@ void http_serve(void) {
             continue;
         }
 
-        DBhttp_print_debug("Accepted client connection: ================================ [%s]\n", execBinaryMd5);
+        DBhttp_print_debug("Accepted client connection: ================================ [%s]: accept new connect.\n", execBinaryMd5);
 
-        char buffer[REQUEST_MAX_SIZE + 1];
-        ssize_t n = read(client_fd, buffer, REQUEST_MAX_SIZE);
+        char rece_buffer[REQUEST_MAX_SIZE + 1];
+        ssize_t n = read(client_fd, rece_buffer, REQUEST_MAX_SIZE);
         if (n <= 0) {
             DBhttp_print_debug("Read failed or connection closed");
             close(client_fd);
             continue;
         }
-        buffer[n] = '\0';
-        DBhttp_print_debug("buffer is :[%s]", buffer);
+        rece_buffer[n] = '\0';
+        DBhttp_print_debug("rece_buffer is :[%s]", rece_buffer);
 
-        if (strncmp(buffer, "POST /signup", 12) != 0) {
-            DBhttp_print_debug("Invalid request, expected POST /signup, got: %.12s", buffer);
+        char *ip = get_client_ip(client_fd, rece_buffer);
+        int rt = redis_check_ip(ip, redis_conf) ;
+        if (rt) {
+            DBhttp_print_debug("IP check failed for %s", ip);
+            send_response(client_fd, 422, "Unprocessable Entity", "22:%d", rt);
+            free(ip);
+            close(client_fd);
+            continue;
+        }
+
+        if (strncmp(rece_buffer, "POST /signup", 12) != 0) {
+            DBhttp_print_debug("Invalid request, expected POST /signup, got: %.12s", rece_buffer);
             send_response(client_fd, 422, "Unprocessable Entity", "10");
             close(client_fd);
             continue;
         }
 
-        char *body = strstr(buffer, "\r\n\r\n");
+        char *body = strstr(rece_buffer, "\r\n\r\n");
         if (!body) {
             DBhttp_print_debug("No request body found");
             send_response(client_fd, 422, "Unprocessable Entity", "11");
@@ -64,7 +74,7 @@ void http_serve(void) {
         if (2 == len && '{' == body[0] && '}' == body[1]) { // {}
             /*
             char signup_sess[33] = {0}; // Declare once, used in both branches
-            char *cookie_session = strstr(buffer, "signup_session=");
+            char *cookie_session = strstr(rece_buffer, "signup_session=");
             if (cookie_session) {
                 int i = 0;
                 char *p = cookie_session + 15; // Skip "signup_session="
@@ -99,18 +109,6 @@ void http_serve(void) {
                 send_response_with_new_signup_sess(client_fd, 200, signup_sess);
             }
             */
-            char *ip = get_client_ip(client_fd, buffer);
-            if ( ip ) {
-                int rt = redis_check_ip(ip, redis_conf) ;
-                if (rt) {
-                    DBhttp_print_debug("IP check failed for %s : %d", ip, rt);
-                    send_response(client_fd, 422, "Unprocessable Entity", "31:%d", rt);
-                    free(ip);
-                    close(client_fd);
-                    continue;
-                }
-                free(ip);
-            }
             char signup_sess[33] = {0}; // Declare once, used in both branches
             char signup_sesv[33] = {0}; // Declare once, used in both branches
             gen_a_new_md5sum_hex_32byte(signup_sess);
@@ -125,7 +123,7 @@ void http_serve(void) {
 
 
         struct signup_request req = { NULL, NULL, NULL };
-        int rt = parse_signup_json(body, &req) ;
+        rt = parse_signup_json(body, &req) ;
         if (rt) {
             send_response(client_fd, 422, "Unprocessable Entity", "12:%d", rt);
             if (req.username) free(req.username);
@@ -150,7 +148,7 @@ void http_serve(void) {
         }
 
         char dbSavedSignUpSalt[33] ;
-        rt = redis_get_string(redis_conf, 5, 32, dbSavedSignUpSalt, "signup_sess:%d", req.signup_salt ) ;
+        rt = redis_get_string(redis_conf, 5, 32, dbSavedSignUpSalt, "signup_sess:%s", req.signup_salt ) ;
         if ( rt ) {
             DBhttp_print_debug("no such a signup salt found!" );
             send_response(client_fd, 422, "Unprocessable Entity", "16:%d", rt );
@@ -162,7 +160,7 @@ void http_serve(void) {
         }
 
         char signUpCookieBuf[33] ;
-        rt = cookie_extract(buffer, n, signUpCookieBuf, sizeof(signUpCookieBuf), "signup_session" );
+        rt = cookie_extract(rece_buffer, n, signUpCookieBuf, sizeof(signUpCookieBuf), "signup_session" );
         if ( rt ) {
             DBhttp_print_debug("no such a signup salt found!" );
             send_response(client_fd, 422, "Unprocessable Entity", "18:%d", rt );
@@ -180,19 +178,6 @@ void http_serve(void) {
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
-            close(client_fd);
-            continue;
-        }
-
-        char *ip = get_client_ip(client_fd, buffer);
-        rt = redis_check_ip(ip, redis_conf) ;
-        if (rt) {
-            DBhttp_print_debug("IP check failed for %s", ip);
-            send_response(client_fd, 422, "Unprocessable Entity", "22:%d", rt);
-            free(req.username);
-            free(req.passwd);
-            free(req.signup_salt);
-            free(ip);
             close(client_fd);
             continue;
         }

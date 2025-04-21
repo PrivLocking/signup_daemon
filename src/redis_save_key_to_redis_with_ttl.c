@@ -1,7 +1,7 @@
 #include "common.h"
 
 bool redis_save_key_to_redis_with_ttl(char databaseIdx, int TTL, const char *str1, const char *str2, const char *val, struct redis_config *conf) {
-    if (!redis_connect_thread(conf)) return false;
+    if (!redis_connect_thread(conf, 5)) return false;
 
     redisContext *ctx = NULL;
     struct timeval timeout = { REDIS_TIMEOUT_SEC, 0 };
