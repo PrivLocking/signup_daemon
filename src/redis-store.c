@@ -47,9 +47,9 @@ bool redis_store_user(const char *username, const char *hash, const char *salt, 
     }
     freeReplyObject(reply);
 
-    reply = redisCommand(ctx, "EXPIRE user:%s %d", username, USER_TTL);
+    reply = redisCommand(ctx, "EXPIRE user:%s %d", username, NEW_USER_TTL_30d);
     if (conf->debug_mode) {
-        print_debug("Sent: EXPIRE user:%s %d | Received: %lld", username, USER_TTL, reply ? reply->integer : 0);
+        print_debug("Sent: EXPIRE user:%s %d | Received: %lld", username, NEW_USER_TTL_30d, reply ? reply->integer : 0);
     }
     if (!reply || reply->type != REDIS_REPLY_INTEGER || reply->integer != 1) {
         print_debug("Redis EXPIRE user:%s failed", username);

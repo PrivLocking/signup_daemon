@@ -11,9 +11,9 @@ src/main.c
 src/redis-store.c
 src/redis.c
 src/redis_check_ip.c
-src/redis_check_username.c
 src/redis_get_int.c
 src/redis_get_string.c
+src/redis_hset_key_value_pair.c
 src/redis_increment.c
 src/redis_set_key_value.c
 src/send_response.c

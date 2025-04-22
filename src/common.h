@@ -10,7 +10,7 @@
 #define SIGNUP_OK_TTL 3600
 #define SIGNUP_FAILED_TTL 3610
 #define SIGNLOCK_TTL 30
-#define USER_TTL 2592000
+#define NEW_USER_TTL_30d 2592000
 #define DEFAULT_SOCKET_PATH "/wwwFS.out/unix.signup.sock"
 #define DEFAULT_REDIS_PATH "/wwwFS.in/u98/unix.redis.sock"
 #define DEFAULT_THREADS 4
@@ -90,7 +90,7 @@ bool redis_connect_thread(struct redis_config *conf, int dbIdx);
 int redis_save_key_to_redis_with_ttl(char databaseIdx, int TTL, const char *str1, const char *str2, const char *val, struct redis_config *conf) ;
 
 /* Hash computation */
-bool compute_hash(const char *username, const char *passwd, char *hash, char *salt);
+int compute_signup_hash2(const char *username, const char *passwd, char *hash, char *salt);
 
 /* HTTP and server functions */
 void set_redis_config(struct redis_config *conf);
@@ -118,6 +118,7 @@ int cookie_extract(const char *buffer, size_t n, char *output_buf, size_t output
 int redis_get_string(struct redis_config *conf, int databaseIdx, int dstLen, char *dstBuf, const char *fmt, ... ) ;
 int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, const char *fmt, ... ) ;
 int redis_set_key_value(struct redis_config *conf, int databaseIdx, const char *fmt, ... ) ;
+int redis_hset_key_value_pair(struct redis_config *conf, int databaseIdx, long *updateAmount, int ttl, const char *fmt, ... ) ;
 
 extern __thread redisContext *ctx ;
 extern __thread int current_dbIdx ;

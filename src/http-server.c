@@ -116,7 +116,7 @@ void http_serve(void) {
             close(client_fd);
             continue;
         }
-        DXhttp_print_debug("username/passwd/signup_salt check : all looks good");
+        DXhttp_print_debug("username/passwd/signup_salt check more details: all looks good");
 
         char dbSavedSignUpSalt[33] ;
         rt = redis_get_string(redis_conf, DatabaseIdx_SignUp, 32, dbSavedSignUpSalt, "signup_sess:%s", req.signup_salt ) ;
@@ -157,10 +157,13 @@ void http_serve(void) {
             continue;
         }
 
-        rt = redis_check_username(req.username, redis_conf) ;
-        if ( rt ) {
-            DXhttp_print_debug("Username check failed for %s, rt-> %d", req.username, rt);
-            send_response(client_fd, 422, "Unprocessable Entity", "24:%d", rt); // username exist,
+        //rt = redis_check_username(req.username, redis_conf) ;
+        long tmpLong ;
+        tmpLong = -1 ;
+        rt = redis_get_int(redis_conf, DatabaseIdx_UserName, &tmpLong, "EXISTS user:%s", req.username ) ;
+        if ( rt || (tmpLong != 0 )) {
+            DXhttp_print_debug("Username check failed, or already exist for %s, rt-> %d, tmpLong -> %ld", req.username, rt, tmpLong );
+            send_response(client_fd, 422, "Unprocessable Entity", "24:%d:%ld", rt, tmpLong); // failed , or username exist,
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
@@ -168,11 +171,16 @@ void http_serve(void) {
             close(client_fd);
             continue;
         }
+        DXhttp_print_debug("Username check ok, not exist. can signup if salt/hash is correct.");
 
+        /* in this case, dbSavedSignUpSalt == signUpCookieBuf, no more check/calc, just save it.
         char hash[HASH_LEN + 1], salt[SALT_LEN + 1];
-        if (!compute_hash(req.username, req.passwd, hash, salt)) {
-            DXhttp_print_debug("Hash computation failed");
-            send_response(client_fd, 422, "Unprocessable Entity", "26");
+        if (! compute_signup_hash2(req.username, req.passwd, hash, salt)) { */
+
+        rt = redis_set_key_value(redis_conf, DatabaseIdx_SignUp, "SET signupOK:%s 1 EX %d", ip, SIGNUP_OK_TTL);
+        if ( rt ) {
+            DXhttp_print_debug("[SET signupOK:%s 1 EX %d] failed, rt-> %d ", ip, SIGNUP_OK_TTL, rt);
+            send_response(client_fd, 422, "Unprocessable Entity", "34:%d", rt); 
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
@@ -181,9 +189,12 @@ void http_serve(void) {
             continue;
         }
 
-        if (!redis_store_user(req.username, hash, salt, ip, redis_conf)) {
-            DXhttp_print_debug("Failed to store user in Redis");
-            send_response(client_fd, 503, "Service Unavailable", NULL);
+        //if (!redis_store_user(req.username, hash, salt, ip, redis_conf)) {
+        rt = redis_hset_key_value_pair( redis_conf, DatabaseIdx_UserName, &tmpLong, NEW_USER_TTL_30d,
+                "HSET user:%s hash %s salt %s level 0 status active", req.username, req.passwd, req.signup_salt);
+        if ( rt ) {
+            DXhttp_print_debug("HSET failed, rt-> %d ", rt);
+            send_response(client_fd, 422, "Unprocessable Entity", "44:%d", rt); 
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);

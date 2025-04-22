@@ -41,7 +41,7 @@ and compare the result,
 4.4.2.2 : and set cookie: Path:/ login_auth=XXXXX, 18000s
 the above is my signup and login solution to keep user password safe. analyze it for me ? is there obversiual problem ?
 */
-bool compute_hash(const char *username, const char *passwd, char *hash, char *salt) {
+int compute_signup_hash2(const char *username, const char *passwd, char *hash, char *salt) {
     uint8_t salt_bytes[SALT_LEN / 2];
     if (RAND_bytes(salt_bytes, sizeof(salt_bytes)) != 1) {
         return false;
