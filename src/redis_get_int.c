@@ -11,22 +11,29 @@ int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, cons
     if (!redis_connect_thread(conf, databaseIdx)) return 129001;
 
     redisReply *reply ;
-    reply = redisCommand(ctx, "GET %s", srcBuf);
+    reply = redisCommand(ctx, srcBuf);
     if (!reply) {
-        DBprint_debug("Redis 129007 GET [%s] error: !reply" , srcBuf);
+        DXprint_debug("Redis 129007 [%s] error: !reply" , srcBuf);
         redisFree(ctx); ctx = NULL ;
         return 129008;
     }
-    if (reply->type != REDIS_REPLY_STRING) {
-        DBprint_debug("Redis 129010 GET int error: reply->type(%d) != REDIS_REPLY_STRING : [GET %s]: " REDIS_TYPE , reply->type, srcBuf );
+    if (reply->type == REDIS_REPLY_ERROR) {
+        DXprint_debug("Redis 129010 ERROR: [%s] -> [%s]", srcBuf, reply->str);  // ← THIS WILL SHOW THE ACTUAL ERROR
         freeReplyObject(reply);
         return 129011;
     }
 
-    if (!reply->str) {
-        DBprint_debug("Redis GET error: reply->str == null : [GET %s]", srcBuf );
+    if (reply->type == REDIS_REPLY_INTEGER) {
+        *dstInt = reply-> integer ;
+        DXprint_debug("Redis 129015 GET int succeed: reply->type(%d) : get [%ld] by [%s]: " REDIS_TYPE , reply->type, *dstInt, srcBuf );
         freeReplyObject(reply);
-        return 129013;
+        return 0;
+    }
+
+    if (!reply->str) {
+        DXprint_debug("Redis 129025 GET int error: reply->str == null : [%s]", srcBuf );
+        freeReplyObject(reply);
+        return 129026;
     }
 
     char *endptr;
@@ -34,14 +41,15 @@ int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, cons
     long value = strtol(reply->str, &endptr, 10);  // Base 10
     // Check for conversion errors
     if (errno != 0 || *endptr != '\0' || reply->str == endptr) {
-        DBprint_debug("Error: 129014 Redis received a valid integer!\n");
+        DXprint_debug("Error: 129035 Redis received a valid integer!\n");
         freeReplyObject(reply);
-        return 129015 ;
+        return 129036 ;
     }
 
     *dstInt = value ;
-    DBprint_debug("Sent: 129019 GET %s | Received(long int): %ld", srcBuf, *dstInt );
+    DXprint_debug("Sent: 129045 GET int: [%s] | Received(long int): %ld", srcBuf, *dstInt );
 
+    freeReplyObject(reply);
     return 0;
 }
 

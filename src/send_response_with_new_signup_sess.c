@@ -27,4 +27,5 @@ void send_response_with_new_signup_sess(int client_fd, int status, const char *s
              body);
 
     write(client_fd, response, strlen(response));
+    DXprint_debug_rn( "%s", response ) ;
 }

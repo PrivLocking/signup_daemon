@@ -29,16 +29,22 @@ void send_response(int client_fd, int status, const char *status_text, const cha
     // Send the response
     write(client_fd, response, strlen(response));
 
-    DBprint_debug_rn( response );
+    DXprint_debug_rn( "%s", response );
 }
 
-void print_debug_rn( const char * buf ){
-    if ( NULL == buf ) return ;
+void print_debug_rn( const char *fmt, ...) {
+    if ( NULL == fmt ) return ;
+
+    char tmpBuf[4096];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(tmpBuf, 4096, fmt, args);
+    va_end(args);
 
     // Debug output with escaped characters
     char debug_str[8192]; // Larger buffer to accommodate escaped characters
     char *dst = debug_str;
-    for (const char *src = buf; *src != '\0' && dst < debug_str + sizeof(debug_str) - 3; src++) {
+    for (const char *src = tmpBuf; *src != '\0' && dst < debug_str + sizeof(debug_str) - 3; src++) {
         if (*src == '\r') {
             *dst++ = '\\';
             *dst++ = 'r';
@@ -51,5 +57,5 @@ void print_debug_rn( const char * buf ){
     }
     *dst = '\0'; // Null-terminate the debug string
 
-    print_debug("(%d)[%s]", strlen(buf), debug_str);
+    print_debug("(%d)[%s]", strlen(tmpBuf), debug_str);
 }

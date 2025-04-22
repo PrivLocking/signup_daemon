@@ -9,13 +9,13 @@ void set_redis_config(struct redis_config *conf) {
 void http_serve(void) {
     int server_fd = get_server_fd();
     if (server_fd == -1) {
-        DBhttp_print_debug("Invalid server socket");
+        DXhttp_print_debug("Invalid server socket");
         return;
     }
 
     struct timeval timeout = { 1, 0 };
     if (setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1) {
-        DBhttp_print_debug("Setsockopt timeout failed: %s", strerror(errno));
+        DXhttp_print_debug("Setsockopt timeout failed: %s", strerror(errno));
         return;
     }
 
@@ -26,27 +26,27 @@ void http_serve(void) {
                 continue;
             }
             if (errno == EINTR) continue;
-            DBhttp_print_debug("Accept failed: %s", strerror(errno));
+            DXhttp_print_debug("Accept failed: %s", strerror(errno));
             sleep(1);
             continue;
         }
 
-        DBhttp_print_debug("Accepted client connection: ================================ [%s]: accept new connect.\n", execBinaryMd5);
+        DXhttp_print_debug("Accepted client connection: ================================ [%s]: accept new connect.\n", execBinaryMd5);
 
         char rece_buffer[REQUEST_MAX_SIZE + 1];
         ssize_t n = read(client_fd, rece_buffer, REQUEST_MAX_SIZE);
         if (n <= 0) {
-            DBhttp_print_debug("Read failed or connection closed");
+            DXhttp_print_debug("Read failed or connection closed");
             close(client_fd);
             continue;
         }
         rece_buffer[n] = '\0';
-        DBhttp_print_debug("rece_buffer is :[%s]", rece_buffer);
+        DXhttp_print_debug("rece_buffer is :[%s]", rece_buffer);
 
-        char *ip = get_client_ip(client_fd, rece_buffer);
-        int rt = redis_check_ip(ip, redis_conf) ;
+        char *ip = http_get_client_ip(client_fd, rece_buffer);
+        int rt = redis_check_ip(ip, redis_conf, DatabaseIdx_SignUp) ;
         if (rt) {
-            DBhttp_print_debug("IP check failed for %s", ip);
+            DXhttp_print_debug("IP check failed for %s, rt %d", ip, rt );
             send_response(client_fd, 422, "Unprocessable Entity", "22:%d", rt);
             free(ip);
             close(client_fd);
@@ -54,69 +54,36 @@ void http_serve(void) {
         }
 
         if (strncmp(rece_buffer, "POST /signup", 12) != 0) {
-            DBhttp_print_debug("Invalid request, expected POST /signup, got: %.12s", rece_buffer);
+            DXhttp_print_debug("Invalid request, expected POST /signup, got: %.12s", rece_buffer);
             send_response(client_fd, 422, "Unprocessable Entity", "10");
+            free(ip);
             close(client_fd);
             continue;
         }
 
         char *body = strstr(rece_buffer, "\r\n\r\n");
         if (!body) {
-            DBhttp_print_debug("No request body found");
+            DXhttp_print_debug("No request body found");
             send_response(client_fd, 422, "Unprocessable Entity", "11");
+            free(ip);
             close(client_fd);
             continue;
         }
         body += 4;
 
         int len = strlen(body);
-        DBhttp_print_debug("body len (%d):[%s]", len, body);
+        DXhttp_print_debug("body len (%d):[%s]", len, body);
         if (2 == len && '{' == body[0] && '}' == body[1]) { // {}
-            /*
-            char signup_sess[33] = {0}; // Declare once, used in both branches
-            char *cookie_session = strstr(rece_buffer, "signup_session=");
-            if (cookie_session) {
-                int i = 0;
-                char *p = cookie_session + 15; // Skip "signup_session="
-
-                // Only allow hexadecimal characters (0-9, a-f, A-F)
-                while (i < 32 && *p && (
-                            (*p >= '0' && *p <= '9') 
-                            || (*p >= 'a' && *p <= 'f') 
-                            // || (*p >= 'A' && *p <= 'F') // because it is cooides, it won't change case-sensive, we gen it to 0-9a-f only.
-                            )) {
-                    signup_sess[i++] = *p++;
-                }
-                signup_sess[i] = '\0';
-
-                if (i != 32) {
-                    DBhttp_print_debug("signup_session len error: %d : [%s]", i, signup_sess);
-                    send_response(client_fd, 422, "Unprocessable Entity", "31");
-                } else {
-                    if (!redis_find_signup_sess_and_reset_its_TTL300(signup_sess, redis_conf)) {
-                        // not found old signup_sess
-                        gen_a_new_md5sum_hex_32byte(signup_sess);
-                        redis_save_signup_sess_with_TTL300(signup_sess, redis_conf);
-                        send_response_with_new_signup_sess(client_fd, 200, signup_sess);
-                    } else {
-                        send_response(client_fd, 422, "Unprocessable Entity", signup_sess); // no new session is needed.
-                    }
-                }
-            } else {
-                DBhttp_print_debug("no signup_session found. try to gen it.");
-                gen_a_new_md5sum_hex_32byte(signup_sess);
-                redis_save_signup_sess_with_TTL300(signup_sess, redis_conf);
-                send_response_with_new_signup_sess(client_fd, 200, signup_sess);
-            }
-            */
             char signup_sess[33] = {0}; // Declare once, used in both branches
             char signup_sesv[33] = {0}; // Declare once, used in both branches
             gen_a_new_md5sum_hex_32byte(signup_sess);
             gen_a_new_md5sum_hex_32byte(signup_sesv);
-            redis_save_key_to_redis_with_ttl(5, 300, "signup_sess", signup_sesv, signup_sess, redis_conf);
+            //redis_save_key_to_redis_with_ttl(DatabaseIdx_SignUp, 300, "signup_sess", signup_sesv, signup_sess, redis_conf);
+            rt = redis_set_key_value(redis_conf, DatabaseIdx_SignUp, "SET signup_sess:%s %s EX %d", signup_sesv, signup_sess, 300);
             //send_response(client_fd, 200, "OK", "{\"ver\": 1, \"signup_sess\": \"%s\"}", signup_sesv);
             send_response_with_new_signup_sess(client_fd, 200, signup_sess, signup_sesv);
 
+            free(ip);
             close(client_fd);
             continue;
         }
@@ -130,9 +97,11 @@ void http_serve(void) {
             if (req.passwd) free(req.passwd);
             if (req.signup_salt) free(req.signup_salt);
             // please notice : here , we must check the req.xxx, it maybe NULL. after that, it must be not NULL, and no more check is needed.
+            free(ip);
             close(client_fd);
             continue;
         }
+        DXhttp_print_debug("json looks OK");
 
         char subCode = 0 ;
         if ( !validate_username(req.username) )        subCode |= 1;
@@ -143,18 +112,21 @@ void http_serve(void) {
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
+            free(ip);
             close(client_fd);
             continue;
         }
+        DXhttp_print_debug("username/passwd/signup_salt check : all looks good");
 
         char dbSavedSignUpSalt[33] ;
-        rt = redis_get_string(redis_conf, 5, 32, dbSavedSignUpSalt, "signup_sess:%s", req.signup_salt ) ;
+        rt = redis_get_string(redis_conf, DatabaseIdx_SignUp, 32, dbSavedSignUpSalt, "signup_sess:%s", req.signup_salt ) ;
         if ( rt ) {
-            DBhttp_print_debug("no such a signup salt found!" );
+            DXhttp_print_debug("no such a signup salt found!" );
             send_response(client_fd, 422, "Unprocessable Entity", "16:%d", rt );
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
+            free(ip);
             close(client_fd);
             continue;
         }
@@ -162,30 +134,32 @@ void http_serve(void) {
         char signUpCookieBuf[33] ;
         rt = cookie_extract(rece_buffer, n, signUpCookieBuf, sizeof(signUpCookieBuf), "signup_session" );
         if ( rt ) {
-            DBhttp_print_debug("no such a signup salt found!" );
+            DXhttp_print_debug("no such a signup salt found!" );
             send_response(client_fd, 422, "Unprocessable Entity", "18:%d", rt );
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
+            free(ip);
             close(client_fd);
             continue;
         }
+        DXhttp_print_debug(" dbSavedSignUpSalt [%s], signUpCookieBuf [%s]", dbSavedSignUpSalt, signUpCookieBuf);
 
         rt = strncmp( dbSavedSignUpSalt, signUpCookieBuf, 33 );
         if ( 0 != rt ) {
-            DBhttp_print_debug(" dbSavedSignUpSalt[%s] and signUpCookieBuf[%s] not equal", dbSavedSignUpSalt, signUpCookieBuf );
+            DXhttp_print_debug(" dbSavedSignUpSalt[%s] and signUpCookieBuf[%s] not equal", dbSavedSignUpSalt, signUpCookieBuf );
             send_response(client_fd, 422, "Unprocessable Entity", "20");
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
+            free(ip);
             close(client_fd);
             continue;
         }
 
         rt = redis_check_username(req.username, redis_conf) ;
         if ( rt ) {
-            DBhttp_print_debug("Username check failed for %s", req.username);
-            redis_increment_failed(ip, redis_conf);
+            DXhttp_print_debug("Username check failed for %s, rt-> %d", req.username, rt);
             send_response(client_fd, 422, "Unprocessable Entity", "24:%d", rt); // username exist,
             free(req.username);
             free(req.passwd);
@@ -197,8 +171,7 @@ void http_serve(void) {
 
         char hash[HASH_LEN + 1], salt[SALT_LEN + 1];
         if (!compute_hash(req.username, req.passwd, hash, salt)) {
-            DBhttp_print_debug("Hash computation failed");
-            redis_increment_failed(ip, redis_conf);
+            DXhttp_print_debug("Hash computation failed");
             send_response(client_fd, 422, "Unprocessable Entity", "26");
             free(req.username);
             free(req.passwd);
@@ -209,8 +182,7 @@ void http_serve(void) {
         }
 
         if (!redis_store_user(req.username, hash, salt, ip, redis_conf)) {
-            DBhttp_print_debug("Failed to store user in Redis");
-            redis_increment_failed(ip, redis_conf);
+            DXhttp_print_debug("Failed to store user in Redis");
             send_response(client_fd, 503, "Service Unavailable", NULL);
             free(req.username);
             free(req.passwd);
@@ -220,7 +192,7 @@ void http_serve(void) {
             continue;
         }
 
-        DBhttp_print_debug("User signup successful");
+        DXhttp_print_debug("User signup successful");
         send_response(client_fd, 200, "OK", NULL);
         free(req.username);
         free(req.passwd);

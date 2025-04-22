@@ -14,19 +14,25 @@ int redis_get_string(struct redis_config *conf, int databaseIdx, int dstLen, cha
     redisReply *reply ;
     reply = redisCommand(ctx, "GET %s", srcBuf);
     if (!reply) {
-        DBprint_debug("Redis GET [%s] error: !reply" , srcBuf);
+        DBprint_debug("Redis 125005 GET [%s] error: !reply" , srcBuf);
         redisFree(ctx); ctx = NULL ;
-        return 125008;
+        return 125006;
     }
-    if (reply->type != REDIS_REPLY_STRING) {
-        DBprint_debug("Redis GET error: reply->type(%d) != REDIS_REPLY_STRING : [GET %s]: " REDIS_TYPE , reply->type, srcBuf );
-        freeReplyObject(reply);
-        return 125010;
-    }
-    if (!reply->str) {
-        DBprint_debug("Redis GET error: reply->str == null : [GET %s]", srcBuf );
+    if (reply->type == REDIS_REPLY_ERROR) {
+        DXprint_debug("Redis 125010 ERROR: [%s] -> [%s]", srcBuf, reply->str);  // ← THIS WILL SHOW THE ACTUAL ERROR
         freeReplyObject(reply);
         return 125011;
+    }
+
+    if (reply->type != REDIS_REPLY_STRING) {
+        DBprint_debug("Redis 129020 GET error: reply->type(%d) != REDIS_REPLY_STRING : [GET %s]: " REDIS_TYPE , reply->type, srcBuf );
+        freeReplyObject(reply);
+        return 125021;
+    }
+    if (!reply->str) {
+        DBprint_debug("Redis 129030 GET error: reply->str == null : [GET %s]", srcBuf );
+        freeReplyObject(reply);
+        return 125031;
     }
 
     DBprint_debug("Sent: GET %s | Received: %s", srcBuf, reply && reply->str ? reply->str : "null, ERROR ?");
@@ -35,9 +41,9 @@ int redis_get_string(struct redis_config *conf, int databaseIdx, int dstLen, cha
     dstBuf[dstLen] = 0 ;
     int actual_len = strlen( dstBuf ) ;
     if ( dstLen != actual_len ) {
-        DBprint_debug("%s : str copy [%s] failed. %d vs %d ", __func__, srcBuf, dstLen, actual_len);
+        DBprint_debug("%s : 129040 str copy [%s] failed. %d vs %d ", __func__, srcBuf, dstLen, actual_len);
         freeReplyObject(reply);
-        return 125021;
+        return 125041;
     }
     freeReplyObject(reply);
     return 0;

@@ -1,7 +1,11 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#define _GNU_SOURCE         /* See feature_test_macros(7) */
 /* Constants */
+
+#define DatabaseIdx_UserName 0
+#define DatabaseIdx_SignUp   5
 #define REQUEST_MAX_SIZE 1024
 #define SIGNUP_OK_TTL 3600
 #define SIGNUP_FAILED_TTL 3610
@@ -66,23 +70,24 @@ extern char execBinaryMd5[] ;
 
 /* Debug and utility functions */
 void print_debug(const char *fmt, ...);
-#define DBprint_debug(fmt, ...) do { if (debug_mode) { print_debug(fmt, ##__VA_ARGS__); } } while (0)
-void print_debug_rn( const char * buf );
-#define DBprint_debug_rn(fmt, ...) do { if (debug_mode) { print_debug_rn(fmt, ##__VA_ARGS__); } } while (0)
+#define DBprint_debug(fmt, ...)               do { if (debug_mode) { print_debug(fmt, ##__VA_ARGS__); } } while (0)
+#define DXprint_debug(fmt, ...)      DBprint_debug("%s,%d: " fmt, __func__, __LINE__, ##__VA_ARGS__)
+void print_debug_rn( const char *fmt, ...) ;
+#define DBprint_debug_rn(fmt, ...)               do { if (debug_mode) { print_debug_rn(fmt, ##__VA_ARGS__); } } while (0)
+#define DXprint_debug_rn(fmt, ...)      DBprint_debug_rn("%s,%d: " fmt, __func__, __LINE__, ##__VA_ARGS__)
 void http_print_debug(const char *fmt, ...);
-#define DBhttp_print_debug(fmt, ...) do { if (debug_mode) { http_print_debug(fmt, ##__VA_ARGS__); } } while (0)
+#define DBhttp_print_debug(fmt, ...)               do { if (debug_mode) { http_print_debug(fmt, ##__VA_ARGS__); } } while (0)
+#define DXhttp_print_debug(fmt, ...)      DBhttp_print_debug("%s,%d: " fmt, __func__, __LINE__, ##__VA_ARGS__) 
 void print_help(void);
 bool parse_args(int argc, char *argv[], bool *debug, int *threads, struct redis_config *redis);
 
 /* Redis functions */
-int redis_check_ip(const char *ip, struct redis_config *conf);
+int redis_check_ip(const char *ip, struct redis_config *conf, int dbIdx) ;
 int redis_check_username(const char *username, struct redis_config *conf);
 bool redis_store_user(const char *username, const char *hash, const char *salt, const char *ip, struct redis_config *conf);
-bool redis_increment_failed(const char *ip, struct redis_config *conf);
+int redis_increment( struct redis_config *conf, int dbIdx, int TTL, long *dstLong, const char *fmt, ...) ;
 bool redis_connect_thread(struct redis_config *conf, int dbIdx);
-bool redis_find_signup_sess_and_reset_its_TTL300(const char *signup_sess, struct redis_config *conf) ;
-bool redis_save_signup_sess_with_TTL300(const char *signup_sess, struct redis_config *conf) ;
-bool redis_save_key_to_redis_with_ttl(char databaseIdx, int TTL, const char *str1, const char *str2, const char *val, struct redis_config *conf) ;
+int redis_save_key_to_redis_with_ttl(char databaseIdx, int TTL, const char *str1, const char *str2, const char *val, struct redis_config *conf) ;
 
 /* Hash computation */
 bool compute_hash(const char *username, const char *passwd, char *hash, char *salt);
@@ -98,7 +103,7 @@ bool validate_username(const char *username);
 bool validate_passwd(const char *passwd);
 bool validate_signup_salt(const char *salt) ;
 void send_response(int client_fd, int status, const char *status_text, const char *return_fmt, ...) ;
-char *get_client_ip(int client_fd, const char *buffer);
+char *http_get_client_ip(int client_fd, const char *buffer);
 
 /* Thread functions */
 void *thread_worker(void *arg);
@@ -111,6 +116,8 @@ char *get_executable_md5_hex(void) ;
 bool string_check_a2f_0to9( char * buf , int len ) ;
 int cookie_extract(const char *buffer, size_t n, char *output_buf, size_t output_buf_size, const char *cookie_name) ;
 int redis_get_string(struct redis_config *conf, int databaseIdx, int dstLen, char *dstBuf, const char *fmt, ... ) ;
+int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, const char *fmt, ... ) ;
+int redis_set_key_value(struct redis_config *conf, int databaseIdx, const char *fmt, ... ) ;
 
 extern __thread redisContext *ctx ;
 extern __thread int current_dbIdx ;
