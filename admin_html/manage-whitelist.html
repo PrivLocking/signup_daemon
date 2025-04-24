@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage IP Whitelist</title>
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .whitelist-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .whitelist-panel {
+            flex: 1;
+            min-width: 300px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .ip-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .ip-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .ip-item:last-child {
+            border-bottom: none;
+        }
+        .ip-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .add-ip-form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+        .form-row input {
+            flex: 1;
+            padding: 8px;
+        }
+        .ip-note {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            width: 50%;
+            border-radius: 5px;
+            max-width: 500px;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        @media (max-width: 549px) {
+            .whitelist-container {
+                flex-direction: column;
+            }
+            .modal-content {
+                width: 80%;
+                margin: 30% auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Manage IP Whitelist</h1>
+            <nav>
+                <a href="./">Dashboard</a>
+            </nav>
+        </header>
+        
+        <main id="content">
+            <div id="loading">Loading...</div>
+            <div id="error" style="display: none;" class="error-message"></div>
+            
+            <div id="whitelistManager" style="display: none;">
+                <p>Manage the list of IP addresses allowed to access the admin system. Only requests from whitelisted IPs will be permitted.</p>
+                
+                <div class="whitelist-container">
+                    <div class="whitelist-panel">
+                        <h2>Current Whitelist</h2>
+                        <ul id="ipList" class="ip-list">
+                            <!-- IP list will be populated here -->
+                        </ul>
+                    </div>
+                    
+                    <div class="whitelist-panel">
+                        <h2>Add New IP</h2>
+                        <form id="addIpForm" class="add-ip-form">
+                            <div class="form-row">
+                                <input type="text" id="newIp" placeholder="IP Address (e.g., 192.168.1.1)" required pattern="^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$">
+                            </div>
+                            <p class="ip-note">Note: Only IPv4 addresses are supported in this format: xxx.xxx.xxx.xxx</p>
+                            <div class="form-row">
+                                <input type="text" id="ipDescription" placeholder="Description (optional)">
+                            </div>
+                            <button type="submit" class="btn">Add to Whitelist</button>
+                        </form>
+                        
+                        <div style="margin-top: 20px;">
+                            <h3>Your Current IP</h3>
+                            <p id="currentIp">Loading...</p>
+                            <button id="addCurrentIp" class="btn">Add Current IP</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <div id="confirmModal" class="modal">
+            <div class="modal-content">
+                <h2 id="modalTitle">Confirm Action</h2>
+                <p id="modalMessage">Are you sure you want to perform this action?</p>
+                <div class="modal-actions">
+                    <button id="cancelAction" class="btn btn-secondary">Cancel</button>
+                    <button id="confirmAction" class="btn btn-danger">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check for IP whitelist management permission (bit 7)
+            try {
+                const permissionData = await checkPermission(128); // 2^7 = 128
+                if (!permissionData.hasPermission) {
+                    document.getElementById('error').textContent = 'You do not have permission to manage the IP whitelist.';
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('loading').style.display = 'none';
+                    return;
+                }
+                
+                initializeWhitelistManager();
+            } catch (error) {
+                document.getElementById('error').textContent = 'Failed to verify permissions: ' + error.message;
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+
+        function initializeWhitelistManager() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('whitelistManager').style.display = 'block';
+            
+            // Load whitelist and current IP
+            loadWhitelist();
+            loadCurrentIp();
+            
+            // Set up form submission
+            document.getElementById('addIpForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const ipAddress = document.getElementById('newIp').value.trim();
+                const description = document.getElementById('ipDescription').value.trim();
+                addIpToWhitelist(ipAddress, description);
+            });
+            
+            // Add current IP button
+            document.getElementById('addCurrentIp').addEventListener('click', function() {
+                const currentIp = document.getElementById('currentIp').textContent;
+                if (currentIp && currentIp !== 'Loading...') {
+                    document.getElementById('newIp').value = currentIp;
+                    document.getElementById('ipDescription').value = 'My current IP';
+                    document.getElementById('addIpForm').dispatchEvent(new Event('submit'));
+                }
+            });
+            
+            // Modal close button
+            document.getElementById('cancelAction').addEventListener('click', function() {
+                document.getElementById('confirmModal').style.display = 'none';
+            });
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target == document.getElementById('confirmModal')) {
+                    document.getElementById('confirmModal').style.display = 'none';
+                }
+            });
+        }
+
+        function loadWhitelist() {
+            fetch('./api/whitelist')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    renderWhitelist(data.ips);
+                })
+                .catch(error => {
+                    document.getElementById('error').textContent = 'Failed to load whitelist: ' + error.message;
+                    document.getElementById('error').style.display = 'block';
+                });
+        }
+
+        function loadCurrentIp() {
+            fetch('./api/current-ip')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('currentIp').textContent = data.ip;
+                })
+                .catch(error => {
+                    document.getElementById('currentIp').textContent = 'Unable to detect';
+                });
+        }
+
+        function renderWhitelist(ips) {
+            const ipList = document.getElementById('ipList');
+            ipList.innerHTML = '';
+            
+            if (ips.length === 0) {
+                const item = document.createElement('li');
+                item.textContent = 'No IPs in whitelist';
+                item.style.padding = '10px';
+                item.style.fontStyle = 'italic';
+                ipList.appendChild(item);
+                return;
+            }
+            
+            ips.forEach(ip => {
+                const item = document.createElement('li');
+                item.className = 'ip-item';
+                
+                const ipInfo = document.createElement('div');
+                ipInfo.innerHTML = `
+                    <strong>${escapeHtml(ip.address)}</strong>
+                    ${ip.description ? `<div><small>${escapeHtml(ip.description)}</small></div>` : ''}
+                `;
+                
+                const actions = document.createElement('div');
+                actions.className = 'ip-actions';
+                const removeButton = document.createElement('button');
+                removeButton.className = 'btn btn-danger btn-sm';
+                removeButton.textContent = 'Remove';
+                removeButton.onclick = () => confirmRemoveIp(ip.address);
+                
+                actions.appendChild(removeButton);
+                item.appendChild(ipInfo);
+                item.appendChild(actions);
+                ipList.appendChild(item);
+            });
+        }
+
+        function addIpToWhitelist(ipAddress, description = '') {
+            // IP validation regex
+            const ipRegex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
+            
+            if (!ipRegex.test(ipAddress)) {
+                document.getElementById('error').textContent = 'Invalid IP address format. Please use IPv4 format (e.g., 192.168.1.1)';
+                document.getElementById('error').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('error').style.display = 'none';
+                }, 5000);
+                return;
+            }
+            
+            fetch('./api/whitelist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ip: ipAddress,
+                    description: description
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to add IP to whitelist');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Clear form
+                document.getElementById('newIp').value = '';
+                document.getElementById('ipDescription').value = '';
+                
+                // Reload whitelist
+                loadWhitelist();
+            })
+            .catch(error => {
+                document.getElementById('error').textContent = error.message;
+                document.getElementById('error').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('error').style.display = 'none';
+                }, 5000);
+            });
+        }
+
+        function confirmRemoveIp(ipAddress) {
+            const modal = document.getElementById('confirmModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMessage = document.getElementById('modalMessage');
+            const confirmButton = document.getElementById('confirmAction');
+            
+            modalTitle.textContent = 'Remove IP from Whitelist';
+            modalMessage.textContent = `Are you sure you want to remove IP address "${ipAddress}" from the whitelist? This will prevent any admin access from this IP.`;
+            
+            // Configure confirm button
+            confirmButton.onclick = function() {
+                removeIpFromWhitelist(ipAddress);
+                modal.style.display = 'none';
+            };
+            
+            modal.style.display = 'block';
+        }
+
+        function removeIpFromWhitelist(ipAddress) {
+            fetch('./api/whitelist/' + encodeURIComponent(ipAddress), {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to remove IP from whitelist');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Reload whitelist
+                loadWhitelist();
+            })
+            .catch(error => {
+                document.getElementById('error').textContent = error.message;
+                document.getElementById('error').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('error').style.display = 'none';
+                }, 5000);
+            });
+        }
+
+        // Helper function to escape HTML to prevent XSS
+        function escapeHtml(unsafeText) {
+            return unsafeText
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

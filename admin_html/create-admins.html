@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Admin Accounts</title>
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .permission-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+        }
+        .checkbox-group input {
+            margin-right: 8px;
+        }
+        @media (max-width: 549px) {
+            .permission-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Create Admin Accounts</h1>
+        <nav>
+            <a href="./">Dashboard</a>
+        </nav>
+    </header>
+    
+    <main>
+        <div id="permission-error" class="error-message hidden">
+            You don't have permission to create admin accounts.
+        </div>
+        
+        <section id="create-admin-section" class="hidden">
+            <h2>Create New Admin Account</h2>
+            
+            <form id="create-admin-form">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="temp-password">Temporary Password:</label>
+                    <input type="password" id="temp-password" name="temp-password" required>
+                    <button type="button" id="generate-password" class="secondary-button">Generate Password</button>
+                </div>
+                
+                <div class="form-group">
+                    <label>Permissions:</label>
+                    <div class="permission-grid">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-0" value="1">
+                            <label for="perm-0">View Users</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-1" value="2">
+                            <label for="perm-1">Approve Users</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-2" value="4">
+                            <label for="perm-2">Modify Basic Levels</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-3" value="8">
+                            <label for="perm-3">Modify Advanced Levels</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-4" value="16">
+                            <label for="perm-4">Delete/Suspend Users</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-5" value="32">
+                            <label for="perm-5">Reset Passwords</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-6" value="64">
+                            <label for="perm-6">View Audit Logs</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-7" value="128">
+                            <label for="perm-7">Manage IP Whitelist</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-8" value="256">
+                            <label for="perm-8">Create Admin Accounts</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-9" value="512">
+                            <label for="perm-9">Modify Admin Permissions</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-10" value="1024">
+                            <label for="perm-10">View System Statistics</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-11" value="2048">
+                            <label for="perm-11">Configure Rate Limits</label>
+                        </div>
+                    </div>
+                    
+                    <div class="preset-buttons">
+                        <button type="button" class="secondary-button" data-role="moderator">Moderator (7)</button>
+                        <button type="button" class="secondary-button" data-role="user-manager">User Manager (63)</button>
+                        <button type="button" class="secondary-button" data-role="security-admin">Security Admin (224)</button>
+                        <button type="button" class="secondary-button" data-role="super-admin">Super Admin (4095)</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Notes:</label>
+                    <textarea id="notes" name="notes" rows="3"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="primary-button">Create Admin</button>
+                    <button type="reset" class="secondary-button">Clear Form</button>
+                </div>
+            </form>
+            
+            <div id="result-message" class="hidden"></div>
+        </section>
+    </main>
+    
+    <script src="main.js"></script>
+    <script>
+        // Check for create admin permission (bit 8 = 256)
+        checkPermission(256, function() {
+            document.getElementById('permission-error').classList.add('hidden');
+            document.getElementById('create-admin-section').classList.remove('hidden');
+            
+            // Generate password function
+            document.getElementById('generate-password').addEventListener('click', function() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+';
+                let password = '';
+                for (let i = 0; i < 12; i++) {
+                    password += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                document.getElementById('temp-password').value = password;
+            });
+            
+            // Permission preset buttons
+            const presetButtons = document.querySelectorAll('.preset-buttons button');
+            presetButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const role = this.getAttribute('data-role');
+                    let permValue = 0;
+                    
+                    switch(role) {
+                        case 'moderator':
+                            permValue = 7; // 1 + 2 + 4
+                            break;
+                        case 'user-manager':
+                            permValue = 63; // 1 + 2 + 4 + 8 + 16 + 32
+                            break;
+                        case 'security-admin':
+                            permValue = 224; // 32 + 64 + 128
+                            break;
+                        case 'super-admin':
+                            permValue = 4095; // All permissions
+                            break;
+                    }
+                    
+                    // Update checkboxes based on permission value
+                    for (let i = 0; i < 12; i++) {
+                        const checkbox = document.getElementById('perm-' + i);
+                        checkbox.checked = (permValue & (1 << i)) !== 0;
+                    }
+                });
+            });
+            
+            // Form submission
+            document.getElementById('create-admin-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('temp-password').value;
+                const notes = document.getElementById('notes').value;
+                
+                // Calculate permission value from checkboxes
+                let permissionValue = 0;
+                for (let i = 0; i < 12; i++) {
+                    if (document.getElementById('perm-' + i).checked) {
+                        permissionValue += (1 << i);
+                    }
+                }
+                
+                // Send data to backend
+                fetch('create_admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        permissions: permissionValue,
+                        notes: notes
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Server error: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const resultMessage = document.getElementById('result-message');
+                    resultMessage.textContent = 'Admin account created successfully!';
+                    resultMessage.classList.remove('hidden', 'error');
+                    resultMessage.classList.add('success');
+                    
+                    // Reset form
+                    document.getElementById('create-admin-form').reset();
+                    
+                    // Hide success message after 3 seconds
+                    setTimeout(() => {
+                        resultMessage.classList.add('hidden');
+                    }, 3000);
+                })
+                .catch(error => {
+                    const resultMessage = document.getElementById('result-message');
+                    resultMessage.textContent = 'Error creating admin account: ' + error.message;
+                    resultMessage.classList.remove('hidden', 'success');
+                    resultMessage.classList.add('error');
+                });
+            });
+            
+        }, function() {
+            // No permission callback
+            document.getElementById('permission-error').classList.remove('hidden');
+            setTimeout(() => {
+                window.location.href = './';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approve Users - Admin Dashboard</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>User Admin System</h1>
+            <div id="adminInfo">
+                <span id="loadingStatus">Loading permissions...</span>
+            </div>
+        </header>
+        
+        <div class="error-container" id="errorContainer" style="display: none;">
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+        
+        <nav id="adminNav" style="display: none;">
+            <ul id="navList">
+                <!-- Navigation items will be added dynamically based on permissions -->
+            </ul>
+        </nav>
+        
+        <main id="mainContent">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Approve New Users</h2>
+                </div>
+                
+                <div id="pendingUsersContainer">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading pending users...</p>
+                    </div>
+                </div>
+                
+                <div id="paginationContainer" class="mt-10"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="main.js"></script>
+    <script>
+        // Current page state
+        let currentPage = 1;
+        const perPage = 30;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the admin dashboard
+            checkAdminPermissions()
+                .then(data => {
+                    initializeDashboard(data);
+                    
+                    // Check if we have permission to approve users
+                    if (!checkModulePermission(PERMISSION.APPROVE_USERS)) {
+                        return; // The redirect will happen in checkModulePermission
+                    }
+                    
+                    // Load pending users
+                    loadPendingUsers();
+                })
+                .catch(handlePermissionError);
+        });
+        
+        async function loadPendingUsers() {
+            const container = document.getElementById('pendingUsersContainer');
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading pending users...</p>
+                </div>
+            `;
+            
+            try {
+                // Fetch pending user data
+                const userData = await fetchModuleData('pending_users', {
+                    page: currentPage,
+                    per_page: perPage
+                });
+                
+                renderPendingUsers(userData);
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="error-container">
+                        <div class="error-message">Failed to load pending users: ${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+        
+        function generateLevelOptions(min, max) {
+            let options = '';
+            for (let i = min; i <= max; i++) {
+                options += `<option value="${i}">${i}</option>`;
+            }
+            return options;
+        }
+        
+        function renderPendingUsers(userData) {
+            const { users, total_count, total_pages } = userData;
+            const container = document.getElementById('pendingUsersContainer');
+            
+            if (!users || users.length === 0) {
+                container.innerHTML = '<p>No pending users found.</p>';
+                return;
+            }
+            
+            // Create table with form elements for each user
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Requested At</th>
+                            <th>TTL</th>
+                            <th>Level</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            users.forEach(user => {
+                tableHTML += `
+                    <tr id="user-row-${user.username}">
+                        <td>${user.username}</td>
+                        <td>${user.requested_at || 'N/A'}</td>
+                        <td>${user.ttl || 'N/A'}</td>
+                        <td>
+                            <select id="level-${user.username}" class="user-level-select">
+                                ${generateLevelOptions(1, 32)}
+                            </select>
+                        </td>
+                        <td class="d-flex">
+                            <button class="approve-button" data-username="${user.username}">Approve</button>
+                            <button class="reject-button ml-10" data-username="${user.username}">Reject</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = tableHTML;
+            
+            // Set up pagination
+            const paginationContainer = document.getElementById('paginationContainer');
+            paginationContainer.innerHTML = '';
+            
+            if (total_pages > 1) {
+                const pagination = createPagination(currentPage, total_pages, page => {
+                    currentPage = page;
+                    loadPendingUsers();
+                });
+                
+                paginationContainer.appendChild(pagination);
+            }
+            
+            // Add event listeners for approve/reject buttons
+            document.querySelectorAll('.approve-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    approveUser(this.dataset.username);
+                });
+            });
+            
+            document.querySelectorAll('.reject-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    rejectUser(this.dataset.username);
+                });
+            });
+        }
+        
+        async function approveUser(username) {
+            try {
+                const levelSelect = document.getElementById(`level-${username}`);
+                const level = levelSelect.value;
+                
+                // Disable buttons and show pending state
+                const row = document.getElementById(`user-row-${username}`);
+                const buttons = row.querySelectorAll('button');
+                buttons.forEach(btn => btn.disabled = true);
+                
+                // Submit the approval
+                const response = await submitModuleData('approve_user', {
+                    username: username,
+                    level: level
+                });
+                
+                // On success, update the UI
+                if (response.success) {
+                    // Remove the row with animation
+                    row.style.backgroundColor = '#d4edda';
+                    setTimeout(() => {
+                        row.style.display = 'none';
+                    }, 1000);
+                    
+                    // Show success message
+                    showError(`User ${username} approved successfully!`);
+                    setTimeout(hideError, 3000);
+                } else {
+                    throw new Error(response.message || 'Unknown error');
+                }
+            } catch (error) {
+                showError(`Failed to approve user: ${error.message}`);
+                
+                // Re-enable buttons
+                const row = document.getElementById(`user-row-${username}`);
+                const buttons = row.querySelectorAll('button');
+                buttons.forEach(btn => btn.disabled = false);
+            }
+        }
+        
+        async function rejectUser(username) {
+            try {
+                // Confirm the rejection
+                if (!confirm(`Are you sure you want to reject user ${username}? This action cannot be undone.`)) {
+                    return;
+                }
+                
+                // Disable buttons and show pending state
+                const row = document.getElementById(`user-row-${username}`);
+                const buttons = row.querySelectorAll('button');
+                buttons.forEach(btn => btn.disabled = true);
+                
+                // Submit the rejection
+                const response = await submitModuleData('reject_user', {
+                    username: username
+                });
+                
+                // On success, update the UI
+                if (response.success) {
+                    // Remove the row with animation
+                    row.style.backgroundColor = '#f8d7da';
+                    setTimeout(() => {
+                        row.style.display = 'none';
+                    }, 1000);
+                    
+                    // Show success message
+                    showError(`User ${username} rejected successfully!`);
+                    setTimeout(hideError, 3000);
+                } else {
+                    throw new Error(response.message || 'Unknown error');
+                }
+            } catch (error) {
+                showError(`Failed to reject user: ${error.message}`);
+                
+                // Re-enable buttons
+                const row = document.getElementById(`user-row-${username}`);
+                const buttons = row.querySelectorAll('button');
+                buttons.forEach(btn => btn.disabled = false);
+            }
+        }
+    </script>
+</body>
+</html>

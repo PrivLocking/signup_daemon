@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modify Basic Levels - Admin Dashboard</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>User Admin System</h1>
+            <div id="adminInfo">
+                <span id="loadingStatus">Loading permissions...</span>
+            </div>
+        </header>
+        
+        <div class="error-container" id="errorContainer" style="display: none;">
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+        
+        <nav id="adminNav" style="display: none;">
+            <ul id="navList">
+                <!-- Navigation items will be added dynamically based on permissions -->
+            </ul>
+        </nav>
+        
+        <main id="mainContent">
+            <div class="card">
+                <div class="card-header d-flex justify-between align-center">
+                    <h2>Modify Basic User Levels (1-16)</h2>
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search by username...">
+                        <button id="searchButton">Search</button>
+                    </div>
+                </div>
+                
+                <div id="userListContainer">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading users...</p>
+                    </div>
+                </div>
+                
+                <div id="paginationContainer" class="mt-10"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="main.js"></script>
+    <script>
+        // Current page state
+        let currentPage = 1;
+        const perPage = 30;
+        let searchPattern = '';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the admin dashboard
+            checkAdminPermissions()
+                .then(data => {
+                    initializeDashboard(data);
+                    
+                    // Check if we have permission to modify basic levels
+                    if (!checkModulePermission(PERMISSION.MODIFY_BASIC_LEVELS)) {
+                        return; // The redirect will happen in checkModulePermission
+                    }
+                    
+                    // Load user list
+                    loadUserList();
+                    
+                    // Set up search functionality
+                    document.getElementById('searchButton').addEventListener('click', function() {
+                        searchPattern = document.getElementById('searchInput').value;
+                        currentPage = 1; // Reset to first page on new search
+                        loadUserList();
+                    });
+                    
+                    // Add enter key support for search
+                    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            document.getElementById('searchButton').click();
+                        }
+                    });
+                })
+                .catch(handlePermissionError);
+        });
+        
+        async function loadUserList() {
+            const listContainer = document.getElementById('userListContainer');
+            listContainer.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading users...</p>
+                </div>
+            `;
+            
+            try {
+                // Fetch user data - only with levels 1-16
+                const userData = await fetchModuleData('basic_level_users', {
+                    pattern: searchPattern,
+                    page: currentPage,
+                    per_page: perPage
+                });
+                
+                renderUserList(userData);
+            } catch (error) {
+                listContainer.innerHTML = `
+                    <div class="error-container">
+                        <div class="error-message">Failed to load user list: ${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+        
+        function generateBasicLevelOptions(currentLevel) {
+            let options = '';
+            for (let i = 1; i <= 16; i++) {
+                options += `<option value="${i}" ${currentLevel == i ? 'selected' : ''}>${i}</option>`;
+            }
+            return options;
+        }
+        
+        function renderUserList(userData) {
+            const { users, total_count, total_pages } = userData;
+            const listContainer = document.getElementById('userListContainer');
+            
+            if (!users || users.length === 0) {
+                listContainer.innerHTML = '<p>No users found matching your criteria.</p>';
+                return;
+            }
+            
+            // Create table with level modification controls
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Current Level</th>
+                            <th>New Level</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            users.forEach(user => {
+                tableHTML += `
+                    <tr id="user-row-${user.username}">
+                        <td>${user.username}</td>
+                        <td>${user.level}</td>
+                        <td>
+                            <select id="level-${user.username}" class="user-level-select">
+                                ${generateBasicLevelOptions(user.level)}
+                            </select>
+                        </td>
+                        <td>${user.status}</td>
+                        <td>
+                            <button class="update-level-button" data-username="${user.username}">Update Level</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            listContainer.innerHTML = tableHTML;
+            
+            // Set up pagination
+            const paginationContainer = document.getElementById('paginationContainer');
+            paginationContainer.innerHTML = '';
+            
+            if (total_pages > 1) {
+                const pagination = createPagination(currentPage, total_pages, page => {
+                    currentPage = page;
+                    loadUserList();
+                });
+                
+                paginationContainer.appendChild(pagination);
+            }
+            
+            // Add event listeners for update level buttons
+            document.querySelectorAll('.update-level-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    updateUserLevel(this.dataset.username);
+                });
+            });
+        }
+        
+        async function updateUserLevel(username) {
+            try {
+                const levelSelect = document.getElementById(`level-${username}`);
+                const newLevel = levelSelect.value;
+                
+                // Disable button and show pending state
+                const button = document.querySelector(`.update-level-button[data-username="${username}"]`);
+                button.disabled = true;
+                button.textContent = 'Updating...';
+                
+                // Submit the level update
+                const response = await submitModuleData('update_user_level', {
+                    username: username,
+                    level: newLevel
+                });
+                
+                // On success, update the UI
+                if (response.success) {
+                    // Update the current level column
+                    const row = document.getElementById(`user-row-${username}`);
+                    const levelCell = row.cells[1]; // Current level cell
+                    levelCell.textContent = newLevel;
+                    
+                    // Show success message
+                    showError(`User ${username} level updated to ${newLevel} successfully!`);
+                    setTimeout(hideError, 3000);
+                    
+                    // Reset button state
+                    button.textContent = 'Update Level';
+                    button.disabled = false;
+                } else {
+                    throw new Error(response.message || 'Unknown error');
+                }
+            } catch (error) {
+                showError(`Failed to update level: ${error.message}`);
+                
+                // Reset button state
+                const button = document.querySelector(`.update-level-button[data-username="${username}"]`);
+                button.textContent = 'Update Level';
+                button.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

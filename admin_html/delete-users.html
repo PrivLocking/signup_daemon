@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete/Suspend Users</title>
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .user-table th, .user-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .user-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .status-active {
+            color: green;
+        }
+        .status-suspended {
+            color: orange;
+        }
+        .status-deleted {
+            color: red;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #searchInput {
+            padding: 8px;
+            width: 70%;
+        }
+        #searchButton {
+            padding: 8px 15px;
+        }
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .page-button {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .page-button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            width: 50%;
+            border-radius: 5px;
+            max-width: 500px;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        @media (max-width: 549px) {
+            .user-table {
+                font-size: 14px;
+            }
+            .action-buttons {
+                flex-direction: column;
+                gap: 5px;
+            }
+            .modal-content {
+                width: 80%;
+                margin: 30% auto;
+            }
+            #searchInput {
+                width: 60%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Delete/Suspend Users</h1>
+            <nav>
+                <a href="./">Dashboard</a>
+                <a href="./view_users.html">User List</a>
+            </nav>
+        </header>
+        
+        <main id="content">
+            <div id="loading">Loading...</div>
+            <div id="error" style="display: none;" class="error-message"></div>
+            
+            <div id="userManagement" style="display: none;">
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Search by username, email or user ID">
+                    <button id="searchButton" class="btn">Search</button>
+                </div>
+                
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Level</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <!-- User data will be populated here -->
+                    </tbody>
+                </table>
+                
+                <div class="pagination" id="pagination">
+                    <!-- Pagination buttons will be populated here -->
+                </div>
+            </div>
+        </main>
+        
+        <div id="confirmModal" class="confirm-modal">
+            <div class="modal-content">
+                <h2 id="modalTitle">Confirm Action</h2>
+                <p id="modalMessage">Are you sure you want to perform this action?</p>
+                <div class="modal-actions">
+                    <button id="cancelAction" class="btn btn-secondary">Cancel</button>
+                    <button id="confirmAction" class="btn btn-danger">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check for delete/suspend permission (bit 4)
+            try {
+                const permissionData = await checkPermission(16); // 2^4 = 16
+                if (!permissionData.hasPermission) {
+                    document.getElementById('error').textContent = 'You do not have permission to delete or suspend users.';
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('loading').style.display = 'none';
+                    return;
+                }
+                
+                initializeUserManagement();
+            } catch (error) {
+                document.getElementById('error').textContent = 'Failed to verify permissions: ' + error.message;
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+
+        function initializeUserManagement() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('userManagement').style.display = 'block';
+            
+            // Current page and search parameters
+            let currentPage = 1;
+            const perPage = 10;
+            let searchTerm = '';
+            
+            // Initial load of users
+            loadUsers(currentPage, perPage, searchTerm);
+            
+            // Search button event listener
+            document.getElementById('searchButton').addEventListener('click', function() {
+                searchTerm = document.getElementById('searchInput').value.trim();
+                currentPage = 1;
+                loadUsers(currentPage, perPage, searchTerm);
+            });
+            
+            // Enter key in search input
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchTerm = document.getElementById('searchInput').value.trim();
+                    currentPage = 1;
+                    loadUsers(currentPage, perPage, searchTerm);
+                }
+            });
+            
+            // Modal close button
+            document.getElementById('cancelAction').addEventListener('click', function() {
+                document.getElementById('confirmModal').style.display = 'none';
+            });
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target == document.getElementById('confirmModal')) {
+                    document.getElementById('confirmModal').style.display = 'none';
+                }
+            });
+        }
+
+        function loadUsers(page, perPage, searchTerm = '') {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('userManagement').style.display = 'none';
+            
+            // Construct URL for fetching users
+            let url = `./api/users?page=${page}&perPage=${perPage}`;
+            if (searchTerm) {
+                url += `&search=${encodeURIComponent(searchTerm)}`;
+            }
+            
+            // Fetch users from API
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    renderUserTable(data.users);
+                    renderPagination(data.totalPages, page);
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('userManagement').style.display = 'block';
+                })
+                .catch(error => {
+                    document.getElementById('error').textContent = 'Failed to load users: ' + error.message;
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('loading').style.display = 'none';
+                });
+        }
+
+        function renderUserTable(users) {
+            const tableBody = document.getElementById('userTableBody');
+            tableBody.innerHTML = '';
+            
+            if (users.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="5" style="text-align:center;">No users found</td>';
+                tableBody.appendChild(row);
+                return;
+            }
+            
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                
+                // Determine status class
+                let statusClass = '';
+                if (user.status === 'active') statusClass = 'status-active';
+                else if (user.status === 'suspended') statusClass = 'status-suspended';
+                else if (user.status === 'deleted') statusClass = 'status-deleted';
+                
+                row.innerHTML = `
+                    <td>${escapeHtml(user.username)}</td>
+                    <td>${escapeHtml(user.email)}</td>
+                    <td>${user.level}</td>
+                    <td class="${statusClass}">${escapeHtml(user.status)}</td>
+                    <td class="action-buttons">
+                        ${user.status !== 'suspended' ? 
+                            `<button class="btn btn-warning" onclick="confirmAction('suspend', '${user.username}')">Suspend</button>` : 
+                            `<button class="btn btn-primary" onclick="confirmAction('activate', '${user.username}')">Activate</button>`}
+                        ${user.status !== 'deleted' ? 
+                            `<button class="btn btn-danger" onclick="confirmAction('delete', '${user.username}')">Delete</button>` : 
+                            ''}
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function renderPagination(totalPages, currentPage) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            // Previous button
+            if (currentPage > 1) {
+                const prevButton = document.createElement('span');
+                prevButton.className = 'page-button';
+                prevButton.textContent = '«';
+                prevButton.onclick = () => loadUsers(currentPage - 1, 10, document.getElementById('searchInput').value.trim());
+                pagination.appendChild(prevButton);
+            }
+            
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('span');
+                pageButton.className = i === currentPage ? 'page-button active' : 'page-button';
+                pageButton.textContent = i;
+                pageButton.onclick = () => loadUsers(i, 10, document.getElementById('searchInput').value.trim());
+                pagination.appendChild(pageButton);
+            }
+            
+            // Next button
+            if (currentPage < totalPages) {
+                const nextButton = document.createElement('span');
+                nextButton.className = 'page-button';
+                nextButton.textContent = '»';
+                nextButton.onclick = () => loadUsers(currentPage + 1, 10, document.getElementById('searchInput').value.trim());
+                pagination.appendChild(nextButton);
+            }
+        }
+
+        function confirmAction(action, username) {
+            const modal = document.getElementById('confirmModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMessage = document.getElementById('modalMessage');
+            const confirmButton = document.getElementById('confirmAction');
+            
+            let title, message;
+            
+            switch(action) {
+                case 'suspend':
+                    title = 'Suspend User';
+                    message = `Are you sure you want to suspend user "${username}"? They will not be able to log in until reactivated.`;
+                    break;
+                case 'delete':
+                    title = 'Delete User';
+                    message = `Are you sure you want to delete user "${username}"? This action preserves the record but marks it as deleted.`;
+                    break;
+                case 'activate':
+                    title = 'Activate User';
+                    message = `Are you sure you want to activate user "${username}"? They will be able to log in again.`;
+                    break;
+            }
+            
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            
+            // Configure confirm button
+            confirmButton.onclick = function() {
+                performUserAction(action, username);
+                modal.style.display = 'none';
+            };
+            
+            modal.style.display = 'block';
+        }
+
+        function performUserAction(action, username) {
+            const url = './api/users/' + encodeURIComponent(username) + '/' + action;
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || `Failed to ${action} user`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Success notification
+                const searchTerm = document.getElementById('searchInput').value.trim();
+                loadUsers(1, 10, searchTerm); // Reload first page
+            })
+            .catch(error => {
+                document.getElementById('error').textContent = error.message;
+                document.getElementById('error').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('error').style.display = 'none';
+                }, 5000);
+            });
+        }
+
+        // Helper function to escape HTML to prevent XSS
+        function escapeHtml(unsafeText) {
+            return unsafeText
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

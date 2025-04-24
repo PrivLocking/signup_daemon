@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Rate Limits</title>
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .rate-limit-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .limit-group {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+        }
+        .limit-group h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .input-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .input-row label {
+            flex: 1;
+            min-width: 160px;
+            margin-right: 10px;
+        }
+        .input-row input {
+            flex: 2;
+            min-width: 100px;
+        }
+        .input-desc {
+            width: 100%;
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: #666;
+        }
+        .action-buttons {
+            margin-top: 20px;
+            text-align: right;
+        }
+        @media (max-width: 549px) {
+            .input-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .input-row label {
+                margin-bottom: 5px;
+            }
+            .input-row input {
+                width: 100%;
+            }
+            .action-buttons {
+                display: flex;
+                flex-direction: column;
+            }
+            .action-buttons button {
+                margin-bottom: 10px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Admin System</h1>
+        <nav id="main-nav">
+            <a href="./">Dashboard</a>
+        </nav>
+    </header>
+
+    <main>
+        <section id="permission-warning" class="hidden">
+            <div class="alert alert-danger">
+                <p>You don't have permission to configure rate limits. Redirecting to dashboard...</p>
+            </div>
+        </section>
+
+        <section id="content" class="hidden">
+            <h2>Configure Rate Limits</h2>
+            
+            <div class="rate-limit-form">
+                <div class="limit-group">
+                    <h3>Login Rate Limits</h3>
+                    
+                    <div class="input-row">
+                        <label for="whitelisted-attempts">Whitelisted IP Attempts:</label>
+                        <input type="number" id="whitelisted-attempts" min="1" max="100">
+                        <div class="input-desc">Maximum number of login attempts for whitelisted IPs</div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <label for="whitelisted-period">Whitelisted Period (seconds):</label>
+                        <input type="number" id="whitelisted-period" min="60" max="86400">
+                        <div class="input-desc">Time period for whitelisted IP attempt count (in seconds)</div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <label for="nonwhitelisted-attempts">Non-whitelisted IP Attempts:</label>
+                        <input type="number" id="nonwhitelisted-attempts" min="1" max="10">
+                        <div class="input-desc">Maximum number of login attempts for non-whitelisted IPs</div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <label for="nonwhitelisted-period">Non-whitelisted Period (seconds):</label>
+                        <input type="number" id="nonwhitelisted-period" min="60" max="86400">
+                        <div class="input-desc">Time period for non-whitelisted IP attempt count (in seconds)</div>
+                    </div>
+                </div>
+
+                <div class="limit-group">
+                    <h3>Session Configuration</h3>
+                    
+                    <div class="input-row">
+                        <label for="session-ttl">Session TTL (minutes):</label>
+                        <input type="number" id="session-ttl" min="5" max="480">
+                        <div class="input-desc">Session time-to-live in minutes (240 = 4 hours)</div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <label for="session-inactivity">Session Inactivity Timeout (minutes):</label>
+                        <input type="number" id="session-inactivity" min="1" max="120">
+                        <div class="input-desc">Automatically expire sessions after this many minutes of inactivity</div>
+                    </div>
+                </div>
+
+                <div class="limit-group">
+                    <h3>CAPTCHA Settings</h3>
+                    
+                    <div class="input-row">
+                        <label for="captcha-difficulty">CAPTCHA Difficulty:</label>
+                        <select id="captcha-difficulty">
+                            <option value="1">Easy</option>
+                            <option value="2">Medium</option>
+                            <option value="3">Hard</option>
+                        </select>
+                        <div class="input-desc">Determines how hard the CAPTCHA is to solve</div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <label for="captcha-ttl">CAPTCHA Token TTL (seconds):</label>
+                        <input type="number" id="captcha-ttl" min="60" max="600">
+                        <div class="input-desc">How long a solved CAPTCHA remains valid</div>
+                    </div>
+                </div>
+
+                <div class="limit-group">
+                    <h3>API Rate Limits</h3>
+                    
+                    <div class="input-row">
+                        <label for="api-requests-per-minute">API Requests Per Minute:</label>
+                        <input type="number" id="api-requests-per-minute" min="10" max="1000">
+                        <div class="input-desc">Maximum API requests per minute per admin user</div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <label for="api-burst">API Burst Allowance:</label>
+                        <input type="number" id="api-burst" min="5" max="100">
+                        <div class="input-desc">Number of API requests allowed in a burst</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="reset-button" class="btn btn-secondary">Reset to Defaults</button>
+                    <button id="save-button" class="btn btn-primary">Save Changes</button>
+                </div>
+
+                <div id="status-message" class="hidden"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Admin System v1.0</p>
+    </footer>
+
+    <script src="main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for admin permission bit 11 (2048)
+            checkPermission(2048).then(hasPermission => {
+                if (!hasPermission) {
+                    document.getElementById('permission-warning').classList.remove('hidden');
+                    document.getElementById('content').classList.add('hidden');
+                    // Redirect to dashboard after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = './';
+                    }, 2000);
+                    return;
+                }
+                
+                // Show content if permission exists
+                document.getElementById('content').classList.remove('hidden');
+                
+                // Fetch current rate limit settings
+                fetchRateLimits();
+                
+                // Add event listeners
+                document.getElementById('save-button').addEventListener('click', saveRateLimits);
+                document.getElementById('reset-button').addEventListener('click', resetToDefaults);
+            });
+        });
+
+        function fetchRateLimits() {
+            fetch('rate_limits')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch rate limits');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Populate form fields with current values
+                    document.getElementById('whitelisted-attempts').value = data.whitelisted_attempts || 10;
+                    document.getElementById('whitelisted-period').value = data.whitelisted_period || 3600;
+                    document.getElementById('nonwhitelisted-attempts').value = data.nonwhitelisted_attempts || 1;
+                    document.getElementById('nonwhitelisted-period').value = data.nonwhitelisted_period || 3600;
+                    document.getElementById('session-ttl').value = data.session_ttl || 240;
+                    document.getElementById('session-inactivity').value = data.session_inactivity || 60;
+                    document.getElementById('captcha-difficulty').value = data.captcha_difficulty || 2;
+                    document.getElementById('captcha-ttl').value = data.captcha_ttl || 300;
+                    document.getElementById('api-requests-per-minute').value = data.api_rpm || 60;
+                    document.getElementById('api-burst').value = data.api_burst || 20;
+                })
+                .catch(error => {
+                    showStatusMessage('Error: ' + error.message, 'error');
+                });
+        }
+
+        function saveRateLimits() {
+            // Validate input values
+            const whitelistedAttempts = parseInt(document.getElementById('whitelisted-attempts').value);
+            const whitelistedPeriod = parseInt(document.getElementById('whitelisted-period').value);
+            const nonwhitelistedAttempts = parseInt(document.getElementById('nonwhitelisted-attempts').value);
+            const nonwhitelistedPeriod = parseInt(document.getElementById('nonwhitelisted-period').value);
+            const sessionTtl = parseInt(document.getElementById('session-ttl').value);
+            const sessionInactivity = parseInt(document.getElementById('session-inactivity').value);
+            const captchaDifficulty = parseInt(document.getElementById('captcha-difficulty').value);
+            const captchaTtl = parseInt(document.getElementById('captcha-ttl').value);
+            const apiRpm = parseInt(document.getElementById('api-requests-per-minute').value);
+            const apiBurst = parseInt(document.getElementById('api-burst').value);
+
+            // Validation checks
+            if (isNaN(whitelistedAttempts) || whitelistedAttempts < 1 || whitelistedAttempts > 100) {
+                showStatusMessage('Whitelisted attempts must be between 1 and 100', 'error');
+                return;
+            }
+            if (isNaN(whitelistedPeriod) || whitelistedPeriod < 60 || whitelistedPeriod > 86400) {
+                showStatusMessage('Whitelisted period must be between 60 and 86400 seconds', 'error');
+                return;
+            }
+            // Additional validation checks would continue for other fields...
+
+            const data = {
+                whitelisted_attempts: whitelistedAttempts,
+                whitelisted_period: whitelistedPeriod,
+                nonwhitelisted_attempts: nonwhitelistedAttempts,
+                nonwhitelisted_period: nonwhitelistedPeriod,
+                session_ttl: sessionTtl,
+                session_inactivity: sessionInactivity,
+                captcha_difficulty: captchaDifficulty,
+                captcha_ttl: captchaTtl,
+                api_rpm: apiRpm,
+                api_burst: apiBurst
+            };
+
+            // Send update to server
+            fetch('update_rate_limits', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to update rate limits');
+                }
+                return response.json();
+            })
+            .then(data => {
+                showStatusMessage('Rate limits updated successfully', 'success');
+            })
+            .catch(error => {
+                showStatusMessage('Error: ' + error.message, 'error');
+            });
+        }
+
+        function resetToDefaults() {
+            // Set form fields to default values
+            document.getElementById('whitelisted-attempts').value = 10;
+            document.getElementById('whitelisted-period').value = 3600;
+            document.getElementById('nonwhitelisted-attempts').value = 1;
+            document.getElementById('nonwhitelisted-period').value = 3600;
+            document.getElementById('session-ttl').value = 240;
+            document.getElementById('session-inactivity').value = 60;
+            document.getElementById('captcha-difficulty').value = 2;
+            document.getElementById('captcha-ttl').value = 300;
+            document.getElementById('api-requests-per-minute').value = 60;
+            document.getElementById('api-burst').value = 20;
+            
+            showStatusMessage('Reset to default values. Click Save to apply changes.', 'info');
+        }
+
+        function showStatusMessage(message, type) {
+            const statusElement = document.getElementById('status-message');
+            statusElement.textContent = message;
+            statusElement.className = type + ' message';
+            statusElement.classList.remove('hidden');
+            
+            // Hide message after 5 seconds
+            setTimeout(() => {
+                statusElement.classList.add('hidden');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

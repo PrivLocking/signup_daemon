@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modify Admin Permissions</title>
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .admin-list {
+            margin-bottom: 20px;
+        }
+        .admin-card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .admin-card h3 {
+            margin-top: 0;
+        }
+        .permission-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+        }
+        .checkbox-group input {
+            margin-right: 8px;
+        }
+        .admin-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .search-area {
+            margin-bottom: 20px;
+        }
+        .hidden-form {
+            display: none;
+        }
+        @media (max-width: 549px) {
+            .permission-grid {
+                grid-template-columns: 1fr;
+            }
+            .admin-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Modify Admin Permissions</h1>
+        <nav>
+            <a href="./">Dashboard</a>
+        </nav>
+    </header>
+    
+    <main>
+        <div id="permission-error" class="error-message hidden">
+            You don't have permission to modify admin permissions.
+        </div>
+        
+        <section id="modify-permissions-section" class="hidden">
+            <div class="search-area">
+                <input type="text" id="admin-search" placeholder="Search admin by username">
+                <button id="search-button" class="secondary-button">Search</button>
+            </div>
+            
+            <div id="admin-list" class="admin-list">
+                <!-- Admin list will be loaded here -->
+                <div class="loading">Loading admin accounts...</div>
+            </div>
+            
+            <!-- Hidden form for updating permissions -->
+            <form id="update-permission-form" class="hidden-form">
+                <input type="hidden" id="admin-username">
+                
+                <div class="form-group">
+                    <label>Admin Permissions for: <span id="form-admin-name"></span></label>
+                    <div class="permission-grid">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-0" value="1">
+                            <label for="perm-0">View Users</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-1" value="2">
+                            <label for="perm-1">Approve Users</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-2" value="4">
+                            <label for="perm-2">Modify Basic Levels</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-3" value="8">
+                            <label for="perm-3">Modify Advanced Levels</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-4" value="16">
+                            <label for="perm-4">Delete/Suspend Users</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-5" value="32">
+                            <label for="perm-5">Reset Passwords</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-6" value="64">
+                            <label for="perm-6">View Audit Logs</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-7" value="128">
+                            <label for="perm-7">Manage IP Whitelist</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-8" value="256">
+                            <label for="perm-8">Create Admin Accounts</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-9" value="512">
+                            <label for="perm-9">Modify Admin Permissions</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-10" value="1024">
+                            <label for="perm-10">View System Statistics</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="perm-11" value="2048">
+                            <label for="perm-11">Configure Rate Limits</label>
+                        </div>
+                    </div>
+                    
+                    <div class="preset-buttons">
+                        <button type="button" class="secondary-button" data-role="moderator">Moderator (7)</button>
+                        <button type="button" class="secondary-button" data-role="user-manager">User Manager (63)</button>
+                        <button type="button" class="secondary-button" data-role="security-admin">Security Admin (224)</button>
+                        <button type="button" class="secondary-button" data-role="super-admin">Super Admin (4095)</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="update-notes">Modification Notes:</label>
+                    <textarea id="update-notes" name="update-notes" rows="3"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="primary-button">Update Permissions</button>
+                    <button type="button" id="cancel-update" class="secondary-button">Cancel</button>
+                </div>
+            </form>
+            
+            <div id="result-message" class="hidden"></div>
+        </section>
+    </main>
+    
+    <script src="main.js"></script>
+    <script>
+        // Check for modify admin permissions (bit 9 = 512)
+        checkPermission(512, function() {
+            document.getElementById('permission-error').classList.add('hidden');
+            document.getElementById('modify-permissions-section').classList.remove('hidden');
+            
+            // Load admin list
+            function loadAdminList(searchTerm = '') {
+                const adminListElement = document.getElementById('admin-list');
+                adminListElement.innerHTML = '<div class="loading">Loading admin accounts...</div>';
+                
+                fetch('list_admins' + (searchTerm ? '?search=' + encodeURIComponent(searchTerm) : ''))
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Server error: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.admins && data.admins.length > 0) {
+                        adminListElement.innerHTML = '';
+                        data.admins.forEach(admin => {
+                            const adminCard = document.createElement('div');
+                            adminCard.className = 'admin-card';
+                            
+                            // Create a human-readable permission list
+                            const permissionNames = [];
+                            if (admin.permissions & 1) permissionNames.push('View Users');
+                            if (admin.permissions & 2) permissionNames.push('Approve Users');
+                            if (admin.permissions & 4) permissionNames.push('Modify Basic Levels');
+                            if (admin.permissions & 8) permissionNames.push('Modify Advanced Levels');
+                            if (admin.permissions & 16) permissionNames.push('Delete/Suspend Users');
+                            if (admin.permissions & 32) permissionNames.push('Reset Passwords');
+                            if (admin.permissions & 64) permissionNames.push('View Audit Logs');
+                            if (admin.permissions & 128) permissionNames.push('Manage IP Whitelist');
+                            if (admin.permissions & 256) permissionNames.push('Create Admin Accounts');
+                            if (admin.permissions & 512) permissionNames.push('Modify Admin Permissions');
+                            if (admin.permissions & 1024) permissionNames.push('View System Statistics');
+                            if (admin.permissions & 2048) permissionNames.push('Configure Rate Limits');
+                            
+                            adminCard.innerHTML = `
+                                <h3>${admin.username}</h3>
+                                <p><strong>Permission Level:</strong> ${admin.permissions}</p>
+                                <p><strong>Permissions:</strong> ${permissionNames.join(', ') || 'None'}</p>
+                                <p><strong>Last Active:</strong> ${admin.last_active || 'Never'}</p>
+                                <div class="admin-actions">
+                                    <button class="primary-button edit-button" data-username="${admin.username}" data-permissions="${admin.permissions}">
+                                        Edit Permissions
+                                    </button>
+                                    <button class="secondary-button reset-button" data-username="${admin.username}">
+                                        Reset Password
+                                    </button>
+                                </div>
+                            `;
+                            
+                            adminListElement.appendChild(adminCard);
+                        });
+                        
+                        // Add event listeners to edit buttons
+                        document.querySelectorAll('.edit-button').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const username = this.getAttribute('data-username');
+                                const permissions = parseInt(this.getAttribute('data-permissions'));
+                                openPermissionForm(username, permissions);
+                            });
+                        });
+                        
+                        // Add event listeners to reset password buttons
+                        document.querySelectorAll('.reset-button').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const username = this.getAttribute('data-username');
+                                resetAdminPassword(username);
+                            });
+                        });
+                    } else {
+                        adminListElement.innerHTML = '<p>No admin accounts found.</p>';
+                    }
+                })
+                .catch(error => {
+                    adminListElement.innerHTML = `<div class="error-message">Error loading admin accounts: ${error.message}</div>`;
+                });
+            }
+            
+            // Handle search button
+            document.getElementById('search-button').addEventListener('click', function() {
+                const searchTerm = document.getElementById('admin-search').value.trim();
+                loadAdminList(searchTerm);
+            });
+            
+            // Handle search input enter key
+            document.getElementById('admin-search').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const searchTerm = this.value.trim();
+                    loadAdminList(searchTerm);
+                }
+            });
+            
+            // Open permission form function
+            function openPermissionForm(username, permissions) {
+                document.getElementById('admin-username').value = username;
+                document.getElementById('form-admin-name').textContent = username;
+                
+                // Set checkboxes based on permission value
+                for (let i = 0; i < 12; i++) {
+                    const checkbox = document.getElementById('perm-' + i);
+                    checkbox.checked = (permissions & (1 << i)) !== 0;
+                }
+                
+                document.getElementById('update-notes').value = '';
+                document.getElementById('update-permission-form').style.display = 'block';
+                document.getElementById('admin-list').style.display = 'none';
+                document.getElementById('result-message').classList.add('hidden');
+            }
+            
+            // Handle permission preset buttons
+            const presetButtons = document.querySelectorAll('.preset-buttons button');
+            presetButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const role = this.getAttribute('data-role');
+                    let permValue = 0;
+                    
+                    switch(role) {
+                        case 'moderator':
+                            permValue = 7; // 1 + 2 + 4
+                            break;
+                        case 'user-manager':
+                            permValue = 63; // 1 + 2 + 4 + 8 + 16 + 32
+                            break;
+                        case 'security-admin':
+                            permValue = 224; // 32 + 64 + 128
+                            break;
+                        case 'super-admin':
+                            permValue = 4095; // All permissions
+                            break;
+                    }
+                    
+                    // Update checkboxes based on permission value
+                    for (let i = 0; i < 12; i++) {
+                        const checkbox = document.getElementById('perm-' + i);
+                        checkbox.checked = (permValue & (1 << i)) !== 0;
+                    }
+                });
+            });
+            
+            // Cancel update button
+            document.getElementById('cancel-update').addEventListener('click', function() {
+                document.getElementById('update-permission-form').style.display = 'none';
+                document.getElementById('admin-list').style.display = 'block';
+            });
+            
+            // Handle permission update submission
+            document.getElementById('update-permission-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('admin-username').value;
+                const notes = document.getElementById('update-notes').value;
+                
+                // Calculate permission value from checkboxes
+                let permissionValue = 0;
+                for (let i = 0; i < 12; i++) {
+                    if (document.getElementById('perm-' + i).checked) {
+                        permissionValue += (1 << i);
+                    }
+                }
+                
+                // Send data to backend
+                fetch('update_admin_permissions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        permissions: permissionValue,
+                        notes: notes
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Server error: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const resultMessage = document.getElementById('result-message');
+                    resultMessage.textContent = 'Admin permissions updated successfully!';
+                    resultMessage.classList.remove('hidden', 'error');
+                    resultMessage.classList.add('success');
+                    
+                    // Hide form and show admin list again
+                    document.getElementById('update-permission-form').style.display = 'none';
+                    document.getElementById('admin-list').style.display = 'block';
+                    
+                    // Reload admin list
+                    loadAdminList();
+                    
+                    // Hide success message after 3 seconds
+                    setTimeout(() => {
+                        resultMessage.classList.add('hidden');
+                    }, 3000);
+                })
+                .catch(error => {
+                    const resultMessage = document.getElementById('result-message');
+                    resultMessage.textContent = 'Error updating admin permissions: ' + error.message;
+                    resultMessage.classList.remove('hidden', 'success');
+                    resultMessage.classList.add('error');
+                });
+            });
+            
+            // Reset admin password function
+            function resetAdminPassword(username) {
+                if (confirm(`Are you sure you want to reset the password for admin "${username}"?`)) {
+                    fetch('reset_admin_password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ username: username })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Server error: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        const resultMessage = document.getElementById('result-message');
+                        resultMessage.textContent = `Password reset successful! Temporary password: ${data.temp_password}`;
+                        resultMessage.classList.remove('hidden', 'error');
+                        resultMessage.classList.add('success');
+                        
+                        // Hide success message after 30 seconds (longer for password to be recorded)
+                        setTimeout(() => {
+                            resultMessage.classList.add('hidden');
+                        }, 30000);
+                    })
+                    .catch(error => {
+                        const resultMessage = document.getElementById('result-message');
+                        resultMessage.textContent = 'Error resetting password: ' + error.message;
+                        resultMessage.classList.remove('hidden', 'success');
+                        resultMessage.classList.add('error');
+                    });
+                }
+            }
+            
+            // Initial load of admin list
+            loadAdminList();
+            
+        }, function() {
+            // No permission callback
+            document.getElementById('permission-error').classList.remove('hidden');
+            setTimeout(() => {
+                window.location.href = './';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

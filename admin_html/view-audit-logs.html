@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Audit Logs</title>
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .filter-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+        .filter-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .filter-group input, .filter-group select {
+            padding: 8px;
+        }
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .log-table th, .log-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .log-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .action-type {
+            font-weight: bold;
+        }
+        .action-login { color: #4CAF50; }
+        .action-create { color: #2196F3; }
+        .action-modify { color: #FF9800; }
+        .action-delete { color: #F44336; }
+        .action-reset { color: #9C27B0; }
+        .action-other { color: #607D8B; }
+        .detail-row {
+            display: none;
+            background-color: #f9f9f9;
+        }
+        .detail-cell {
+            padding: 15px;
+        }
+        .detail-content {
+            font-family: monospace;
+            white-space: pre-wrap;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .page-button {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .page-button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .toggle-details {
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: underline;
+        }
+        @media (max-width: 549px) {
+            .filter-group {
+                min-width: 100%;
+            }
+            .log-table {
+                font-size: 14px;
+            }
+            .filter-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Audit Logs</h1>
+            <nav>
+                <a href="./">Dashboard</a>
+            </nav>
+        </header>
+        
+        <main id="content">
+            <div id="loading">Loading...</div>
+            <div id="error" style="display: none;" class="error-message"></div>
+            
+            <div id="auditLogViewer" style="display: none;">
+                <div class="filter-container">
+                    <div class="filter-group">
+                        <label for="adminFilter">Admin Username</label>
+                        <input type="text" id="adminFilter" placeholder="Filter by admin">
+                    </div>
+                    <div class="filter-group">
+                        <label for="actionFilter">Action Type</label>
+                        <select id="actionFilter">
+                            <option value="">All Actions</option>
+                            <option value="login">Login</option>
+                            <option value="create">Create</option>
+                            <option value="modify">Modify</option>
+                            <option value="delete">Delete</option>
+                            <option value="reset">Reset</option>
+                            <option value="approve">Approve</option>
+                            <option value="whitelist">Whitelist</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="targetFilter">Target Username</label>
+                        <input type="text" id="targetFilter" placeholder="Filter by target">
+                    </div>
+                    <div class="filter-group">
+                        <label for="startDate">Start Date</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="filter-group">
+                        <label for="endDate">End Date</label>
+                        <input type="date" id="endDate">
+                    </div>
+                    <div class="filter-group" style="align-self: flex-end;">
+                        <button id="applyFilters" class="btn">Apply Filters</button>
+                    </div>
+                </div>
+                
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Admin</th>
+                            <th>Action</th>
+                            <th>Target</th>
+                            <th>IP Address</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody">
+                        <!-- Log data will be populated here -->
+                    </tbody>
+                </table>
+                
+                <div class="pagination" id="pagination">
+                    <!-- Pagination buttons will be populated here -->
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check for view audit logs permission (bit 6)
+            try {
+                const permissionData = await checkPermission(64); // 2^6 = 64
+                if (!permissionData.hasPermission) {
+                    document.getElementById('error').textContent = 'You do not have permission to view audit logs.';
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('loading').style.display = 'none';
+                    return;
+                }
+                
+                initializeAuditLogViewer();
+            } catch (error) {
+                document.getElementById('error').textContent = 'Failed to verify permissions: ' + error.message;
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+
+        function initializeAuditLogViewer() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('auditLogViewer').style.display = 'block';
+            
+            // Current page and filter parameters
+            let currentPage = 1;
+            const perPage = 20;
+            let filters = {};
+            
+            // Set default date range (last 7 days)
+            const today = new Date();
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(today.getDate() - 7);
+            
+            document.getElementById('endDate').valueAsDate = today;
+            document.getElementById('startDate').valueAsDate = sevenDaysAgo;
+            
+            // Initial load of logs
+            loadAuditLogs(currentPage, perPage, getFilters());
+            
+            // Apply filters button event listener
+            document.getElementById('applyFilters').addEventListener('click', function() {
+                currentPage = 1;
+                loadAuditLogs(currentPage, perPage, getFilters());
+            });
+        }
+
+        function getFilters() {
+            const filters = {};
+            
+            const adminFilter = document.getElementById('adminFilter').value.trim();
+            if (adminFilter) filters.admin = adminFilter;
+            
+            const actionFilter = document.getElementById('actionFilter').value;
+            if (actionFilter) filters.action = actionFilter;
+            
+            const targetFilter = document.getElementById('targetFilter').value.trim();
+            if (targetFilter) filters.target = targetFilter;
+            
+            const startDate = document.getElementById('startDate').value;
+            if (startDate) filters.startDate = startDate;
+            
+            const endDate = document.getElementById('endDate').value;
+            if (endDate) filters.endDate = endDate;
+            
+            return filters;
+        }
+
+        function loadAuditLogs(page, perPage, filters = {}) {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('auditLogViewer').style.display = 'none';
+            
+            // Construct URL for fetching logs
+            let url = `./api/audit-logs?page=${page}&perPage=${perPage}`;
+            
+            // Add filters to URL
+            for (const [key, value] of Object.entries(filters)) {
+                url += `&${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+            }
+            
+            // Fetch logs from API
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    renderLogTable(data.logs);
+                    renderPagination(data.totalPages, page);
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('auditLogViewer').style.display = 'block';
+                })
+                .catch(error => {
+                    document.getElementById('error').textContent = 'Failed to load audit logs: ' + error.message;
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('loading').style.display = 'none';
+                });
+        }
+
+        function renderLogTable(logs) {
+            const tableBody = document.getElementById('logTableBody');
+            tableBody.innerHTML = '';
+            
+            if (logs.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="6" style="text-align:center;">No audit logs found</td>';
+                tableBody.appendChild(row);
+                return;
+            }
+            
+            logs.forEach((log, index) => {
+                // Format timestamp
+                const timestamp = new Date(log.timestamp);
+                const formattedDate = timestamp.toLocaleDateString();
+                const formattedTime = timestamp.toLocaleTimeString();
+                
+                // Determine action class
+                let actionClass = 'action-other';
+                if (log.action.includes('login')) actionClass = 'action-login';
+                else if (log.action.includes('create')) actionClass = 'action-create';
+                else if (log.action.includes('modify')) actionClass = 'action-modify';
+                else if (log.action.includes('delete')) actionClass = 'action-delete';
+                else if (log.action.includes('reset')) actionClass = 'action-reset';
+                
+                // Main row
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formattedDate} ${formattedTime}</td>
+                    <td>${escapeHtml(log.admin)}</td>
+                    <td class="action-type ${actionClass}">${escapeHtml(log.action)}</td>
+                    <td>${escapeHtml(log.target || '-')}</td>
+                    <td>${escapeHtml(log.ip)}</td>
+                    <td><span class="toggle-details" onclick="toggleDetails(${index})">Show Details</span></td>
+                `;
+                tableBody.appendChild(row);
+                
+                // Details row
+                const detailRow = document.createElement('tr');
+                detailRow.className = 'detail-row';
+                detailRow.id = `details-${index}`;
+                
+                let detailContent = '';
+                if (typeof log.details === 'object') {
+                    detailContent = JSON.stringify(log.details, null, 2);
+                } else {
+                    detailContent = log.details || 'No additional details';
+                }
+                
+                detailRow.innerHTML = `
+                    <td colspan="6" class="detail-cell">
+                        <div class="detail-content">${escapeHtml(detailContent)}</div>
+                    </td>
+                `;
+                tableBody.appendChild(detailRow);
+            });
+        }
+
+        function renderPagination(totalPages, currentPage) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            // Previous button
+            if (currentPage > 1) {
+                const prevButton = document.createElement('span');
+                prevButton.className = 'page-button';
+                prevButton.textContent = '«';
+                prevButton.onclick = () => loadAuditLogs(currentPage - 1, 20, getFilters());
+                pagination.appendChild(prevButton);
+            }
+            
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('span');
+                pageButton.className = i === currentPage ? 'page-button active' : 'page-button';
+                pageButton.textContent = i;
+                pageButton.onclick = () => loadAuditLogs(i, 20, getFilters());
+                pagination.appendChild(pageButton);
+            }
+            
+            // Next button
+            if (currentPage < totalPages) {
+                const nextButton = document.createElement('span');
+                nextButton.className = 'page-button';
+                nextButton.textContent = '»';
+                nextButton.onclick = () => loadAuditLogs(currentPage + 1, 20, getFilters());
+                pagination.appendChild(nextButton);
+            }
+        }
+
+        // Function to toggle detail rows
+        function toggleDetails(index) {
+            const detailRow = document.getElementById(`details-${index}`);
+            const currentDisplay = detailRow.style.display;
+            
+            // Toggle display
+            if (currentDisplay === 'table-row') {
+                detailRow.style.display = 'none';
+                const toggleButton = event.target;
+                toggleButton.textContent = 'Show Details';
+            } else {
+                detailRow.style.display = 'table-row';
+                const toggleButton = event.target;
+                toggleButton.textContent = 'Hide Details';
+            }
+        }
+
+        // Helper function to escape HTML to prevent XSS
+        function escapeHtml(unsafeText) {
+            if (unsafeText === null || unsafeText === undefined) return '';
+            
+            return String(unsafeText)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

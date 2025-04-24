@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>User Admin System</h1>
+            <div id="adminInfo">
+                <span id="loadingStatus">Loading permissions...</span>
+            </div>
+        </header>
+        
+        <div class="error-container" id="errorContainer" style="display: none;">
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+        
+        <nav id="adminNav" style="display: none;">
+            <ul id="navList">
+                <!-- Navigation items will be added dynamically based on permissions -->
+            </ul>
+        </nav>
+        
+        <main id="mainContent">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading dashboard...</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the admin dashboard
+            checkAdminPermissions()
+                .then(initializeDashboard)
+                .catch(handlePermissionError);
+        });
+    </script>
+</body>
+</html>

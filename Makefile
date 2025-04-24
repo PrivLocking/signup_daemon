@@ -130,6 +130,8 @@ vp vim_prepare : vpc
 		|grep -v '\.bak[0-9]*' \
 		| xargs -n 1 realpath --relative-to=.|sort -u   >> _vim/file01.txt
 	find signup_html/ -maxdepth 1 -type f               >> _vim/file01.txt
+	find login_html/  -maxdepth 1 -type f               >> _vim/file01.txt
+	find admin_html/  -maxdepth 1 -type f               >> _vim/file01.txt
 	sed -i -e '/^\.$$/d' -e '/^$$/d'                       _vim/file01.txt
 	cscope -q -R -b -i                                     _vim/file01.txt
 	ctags -L                                               _vim/file01.txt
@@ -156,5 +158,9 @@ ball:
 	strip $(dst)
 
 sign signup:
-	( cd signup_html/ && tar -cf - .) | ( cd signup_for_publish/ && tar -xf - )
-	-diff -r signup_html/ signup_for_publish/ 2>&1 |grep -v 'No such file or directory'
+	( cd signup_html/ && tar -cf - .) | ( cd usignup/ && rm -fr * && tar -xf - )
+	-diff -r signup_html/                    usignup/ 2>&1 |grep -v 'No such file or directory'
+	( cd login_html/  && tar -cf - .) | ( cd ulogin/ && rm -fr * && tar -xf - )
+	-diff -r login_html/                     ulogin/ 2>&1 |grep -v 'No such file or directory'
+	( cd admin_html/  && tar -cf - .) | ( cd uadmin/ && rm -fr * && tar -xf - )
+	-diff -r admin_html/                     uadmin/ 2>&1 |grep -v 'No such file or directory'
