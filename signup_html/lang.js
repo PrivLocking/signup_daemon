@@ -1,11 +1,13 @@
 // Language message arrays
 const messages = {
     en: {
-        title: "Sign Up",
+        title_login: "Login",
+        title_signup: "Sign Up",
+        get title() { return this[`title_${funcName}`]; },
         username_label: "Username:",
         password_label: "Password: (Length: $length)",
         show_password_label: "Show Password",
-        submit_btn: "Sign Up",
+        get submit_btn() { return this.title; },
         success: "Sign Up succeed. Wait 90s to login (200)",
         success2: "Registration Successful. Waiting...",
         passwd_weak: "Weak",
@@ -26,11 +28,13 @@ const messages = {
         save_password_label: "Allow browser to save password"
     },
     cn: {
-        title: "注册",
+        title_login: "登录",
+        title_signup: "注册",
+        get title() { return this[`title_${funcName}`]; },
         username_label: "用户名：",
         password_label: "密码：（长度：$length）",
         show_password_label: "显示密码",
-        submit_btn: "注册",
+        get submit_btn() { return this.title; },
         success: "注册成功，等待90秒登录 (200)",
         success2: "注册成功。请稍候。",
         passwd_weak: "密码太弱",
@@ -51,13 +55,15 @@ const messages = {
         save_password_label: "是否允许浏览器保存密码"
     },
     ca: {
-        title: "註冊",
+        title_login: "登入",
+        title_signup: "註冊",
+        get title() { return this[`title_${funcName}`]; },
         username_label: "用戶名：",
         password_label: "密碼：（長度：$length）",
         show_password_label: "顯示密碼",
-        submit_btn: "註冊",
+        get submit_btn() { return this.title; },
         success: "註冊成功，等90秒登入 (200)",
-        success2: "注册成功。请稍候。",
+        success2: "註册成功。请稍候。",
         passwd_weak: "密碼太弱",
         passwd_medium: "密碼一般",
         passwd_strong: "密碼很強",

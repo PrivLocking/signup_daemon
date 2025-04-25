@@ -23,7 +23,6 @@ sourceA := src/redis_increment.c
 sourceD := src/redis_set_key_value.c
 sourceE := src/redis_hset_key_value_pair.c
 sourceF := src/redis-store.c
-#sourceF := src/redis_check_username.c
 sourceG := src/redis.c
 sourceH := src/redis_get_string.c
 sourceI := src/redis_get_int.c
@@ -33,8 +32,9 @@ sourceL := src/server.c
 sourceM := src/string_check_a2f_0to9.c
 sourceN := src/utils.c
 sourceO:= src/get_executable_md5.c
+sourceP:= src/check-post-type-path.c
 
-sourceListIdx:=0 1 2 3 4 5 6 7 8 A D E F G H I J K L M N O
+sourceListIdx:=0 1 2 3 4 5 6 7 8 A D E F G H I J K L M N O P
 sourceList:=$(foreach ssss,$(sourceListIdx),$(source$(ssss)))
 
 

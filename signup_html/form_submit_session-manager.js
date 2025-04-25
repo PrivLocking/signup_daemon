@@ -20,14 +20,20 @@ function handleSessionError(messageElement, submitButton, messages) {
  * @returns {Promise<string|null>} - Session ID or null if failed
  */
 let requestSignupSession_body = "" ;
+let requestSignupSession_status = "" ;
+let requestSignupSession_header = "" ;
 async function requestSignupSession(messageElement, submitButton, messages) {
     requestSignupSession_body = "" ;
+    requestSignupSession_status = "" ;
+    requestSignupSession_header = "" ;
     try {
-        const sessionResponse = await fetch("signup", {
+        const sessionResponse = await fetch(funcName, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({})
         });
+        requestSignupSession_status = sessionResponse.status ;
+        requestSignupSession_header = sessionResponse.headers ;
         
         if (sessionResponse.ok) {
             // Get response content
@@ -79,12 +85,14 @@ async function requestSignupSession(messageElement, submitButton, messages) {
         } else { // sessionResponse not ok, maybe , 422
             handleSessionError(messageElement, submitButton, messages);
             requestSignupSession_body = await sessionResponse.text();
+            requestSignupSession_status = sessionResponse.status ;
+            requestSignupSession_header = sessionResponse.headers ;
             return null;
         }
     } catch (e) {
-        console.error("Error requesting signup session:", e);
+        console.error(`Error requesting ${funcName} session:`, e);
         handleSessionError(messageElement, submitButton, messages);
-        requestSignupSession_body = "Error requesting signup session" ;
+        requestSignupSession_body = `Error requesting ${funcName} session` ;
         return null;
     }
 }

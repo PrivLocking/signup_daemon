@@ -6,6 +6,15 @@ void set_redis_config(struct redis_config *conf) {
     redis_conf = conf;
 }
 
+thread_local char postType_0signup_1login_2_admin = -1 ;
+thread_local char postType_str[10] ;
+const char* postReqAhead[] = { 
+    "signup",
+    "login",
+    "admin",
+    NULL
+};
+
 void http_serve(void) {
     int server_fd = get_server_fd();
     if (server_fd == -1) {
@@ -43,19 +52,21 @@ void http_serve(void) {
         rece_buffer[n] = '\0';
         DXhttp_print_debug("rece_buffer is :[%s]", rece_buffer);
 
-        char *ip = http_get_client_ip(client_fd, rece_buffer);
-        int rt = redis_check_ip(ip, redis_conf, DatabaseIdx_SignUp) ;
-        if (rt) {
-            DXhttp_print_debug("IP check failed for %s, rt %d", ip, rt );
-            send_response(client_fd, 422, "Unprocessable Entity", "22:%d", rt);
-            free(ip);
+        //if (strncmp(rece_buffer, "POST /signup", 12) != 0) {
+        int rt = check_post_type_path( rece_buffer, n ) ;
+        if ( rt < 0 ) {
+            DXhttp_print_debug("Invalid request, expected POST /path, got: %d:[%.25s]", rt, rece_buffer);
+            send_response(client_fd, 422, "Unprocessable Entity", "10:%d:[%.25s]", rt, rece_buffer);
             close(client_fd);
             continue;
         }
+        DXhttp_print_debug("get postType_0signup_1login_2_admin is :%d [%s]", postType_0signup_1login_2_admin, postType_str );
 
-        if (strncmp(rece_buffer, "POST /signup", 12) != 0) {
-            DXhttp_print_debug("Invalid request, expected POST /signup, got: %.12s", rece_buffer);
-            send_response(client_fd, 422, "Unprocessable Entity", "10");
+        char *ip = http_get_client_ip(client_fd, rece_buffer);
+        rt = redis_check_ip(ip, redis_conf, DatabaseIdx_SignUp) ;
+        if (rt) {
+            DXhttp_print_debug("IP check failed for %s, rt %d", ip, rt );
+            send_response(client_fd, 422, "Unprocessable Entity", "22:%d", rt);
             free(ip);
             close(client_fd);
             continue;

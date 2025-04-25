@@ -7,7 +7,7 @@
  */
 async function getOrCreateSignupSession(messageElement, submitButton, messages) {
     // Check if signup_session cookie exists
-    let signupSession = getCookie('signup_session');
+    let signupSession = getCookie(`${funcName}_session`);
     
     // If no cookie exists, request one
     if (!signupSession) {
@@ -15,7 +15,7 @@ async function getOrCreateSignupSession(messageElement, submitButton, messages) 
         
         // If we still don't have a session, show error
         if (!signupSession) {
-            if (messageElement) messageElement.textContent = messages.too_more_tries + ":" + requestSignupSession_body ;
+            if (messageElement) messageElement.textContent = messages.too_more_tries + ":" + requestSignupSession_status + ":" + requestSignupSession_body ;
             if (submitButton) {
                 submitButton.disabled = false;
                 submitButton.textContent = messages.submit_btn;

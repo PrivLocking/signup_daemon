@@ -1,3 +1,4 @@
+src/check-post-type-path.c
 src/common.h
 src/cookie_extract.c
 src/gen_a_new_md5sum_hex_32byte.c
@@ -28,6 +29,7 @@ signup_html/form_submit_handle.js
 signup_html/password_input.js
 signup_html/ui_listener.js
 signup_html/signup.css
+signup_html/env.js
 signup_html/password_listener.js
 signup_html/validators.js
 signup_html/password.js
@@ -39,6 +41,8 @@ signup_html/ui.js
 signup_html/form_submit_get_or_create_session.js
 signup_html/lang.js
 signup_html/form_submit.js
+login_html/index.html
+login_html/env.js
 admin_html/view-users.html
 admin_html/delete-users.html
 admin_html/reset-passwords.html

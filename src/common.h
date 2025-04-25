@@ -49,6 +49,7 @@
 #include <stdbool.h>
 #include <argon2.h>
 #include <openssl/rand.h>
+#include <threads.h>
 
 /* Data structures */
 struct signup_request {
@@ -67,6 +68,12 @@ struct redis_config {
 
 extern char execBinaryMd5[] ;
 /* Function declarations */
+extern thread_local char postType_0signup_1login_2_admin ;
+extern thread_local char postType_str[10] ;
+extern thread_local redisContext *ctx ;
+extern thread_local int current_dbIdx ;
+extern              const char *postReqAhead[] ;
+
 
 /* Debug and utility functions */
 void print_debug(const char *fmt, ...);
@@ -119,8 +126,6 @@ int redis_get_string(struct redis_config *conf, int databaseIdx, int dstLen, cha
 int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, const char *fmt, ... ) ;
 int redis_set_key_value(struct redis_config *conf, int databaseIdx, const char *fmt, ... ) ;
 int redis_hset_key_value_pair(struct redis_config *conf, int databaseIdx, long *updateAmount, int ttl, const char *fmt, ... ) ;
-
-extern __thread redisContext *ctx ;
-extern __thread int current_dbIdx ;
+int check_post_type_path(char *buffer, size_t n) ;
 
 #endif /* COMMON_H */

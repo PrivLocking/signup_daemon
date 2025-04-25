@@ -1,7 +1,7 @@
 #include "common.h"
 
-__thread redisContext *ctx = NULL;
-__thread int current_dbIdx = -1;
+thread_local redisContext *ctx = NULL;
+thread_local int current_dbIdx = -1;
 
 bool redis_connect_thread(struct redis_config *conf, int dbIdx) {
     redisReply *reply ;
