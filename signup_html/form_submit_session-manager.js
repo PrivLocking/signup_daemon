@@ -22,7 +22,7 @@ function handleSessionError(messageElement, submitButton, messages) {
 let requestSignupSession_body = "" ;
 let requestSignupSession_status = "" ;
 let requestSignupSession_header = "" ;
-async function requestSignupSession(messageElement, submitButton, messages) {
+async function askForNewTmpSession(messageElement, submitButton, messages) {
     requestSignupSession_body = "" ;
     requestSignupSession_status = "" ;
     requestSignupSession_header = "" ;
@@ -52,14 +52,15 @@ async function requestSignupSession(messageElement, submitButton, messages) {
                     return null;
                 }
                 
+                const sess = jsonResponse[`${funcName}_sess`];
                 // Validate signup_sess format
-                if (jsonResponse.signup_sess && 
-                    jsonResponse.signup_sess.length === 32 && 
-                    /^[0-9a-f]+$/.test(jsonResponse.signup_sess)) {
-                    console.log("Got valid session from JSON response:", jsonResponse.signup_sess);
-                    sessionId = jsonResponse.signup_sess;
+                if (sess && 
+                    sess.length === 32 && 
+                    /^[0-9a-f]+$/.test(sess)) {
+                    console.log("Got valid session from JSON response:", sess);
+                    sessionId = sess;
                 } else {
-                    console.log("JSON response contained invalid session format:", jsonResponse.signup_sess);
+                    console.log("JSON response contained invalid session format:", sess);
                     handleSessionError(messageElement, submitButton, messages);
                     requestSignupSession_body = "JSON response contained invalid session format" ;
                     return null;

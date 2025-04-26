@@ -56,7 +56,7 @@ int check_post_type_path(char *buffer, size_t n) {
     char *path_end = http_version;
     while (path_end > path_start && *(path_end - 1) == ' ') {
         path_end--;
-        *path_end = 0 ; // term it with \0
+        //*path_end = 0 ; // term it with \0
     }
     
     // Find the last '/' in the path
@@ -77,7 +77,7 @@ int check_post_type_path(char *buffer, size_t n) {
     char *last_part = last_slash + 1;
     size_t last_part_len = path_end - last_part;
     
-    //DXhttp_print_debug("last_part(%d)[%.20s]", last_part_len, last_part );
+    DXhttp_print_debug("last_part(%d)[%.20s]", last_part_len, last_part );
 
     // Match against patterns in postReqAhead
     for (int i = 0; postReqAhead[i] != NULL; i++) {
@@ -86,9 +86,9 @@ int check_post_type_path(char *buffer, size_t n) {
         // Check if the last part matches the current pattern
         if (pattern_len <= last_part_len && 
             strncmp(last_part, postReqAhead[i], pattern_len) == 0) {
-            strncpy(postType_str, last_part, 10);
-            postType_str[9] = 0 ;
+            //strncpy(postType_str, last_part, pattern_len); postType_str[9] = 0 ;
             postType_0signup_1login_2_admin = i ;
+            postType_str = postReqAhead[ i ] ;
             return i;
         }
     }

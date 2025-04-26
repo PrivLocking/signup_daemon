@@ -35,6 +35,7 @@ signup_html/validators.js
 signup_html/password.js
 signup_html/form_submit_validation.js
 signup_html/ui_update.js
+signup_html/calc_passHash.js
 signup_html/index.html
 signup_html/form_submit_utils.js
 signup_html/ui.js

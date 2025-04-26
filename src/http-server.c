@@ -6,14 +6,25 @@ void set_redis_config(struct redis_config *conf) {
     redis_conf = conf;
 }
 
-thread_local char postType_0signup_1login_2_admin = -1 ;
-thread_local char postType_str[10] ;
+thread_local int postType_0signup_1login_2_admin = -1 ;
+thread_local const char *postType_str ;
 const char* postReqAhead[] = { 
     "signup",
     "login",
     "admin",
     NULL
 };
+const int DbIdx_salt[] = { 
+    -1,
+    DatabaseIdx_salt_Login,
+    DatabaseIdx_salt_Admin
+};
+const int DbIdx_ipCount[] = { 
+    DatabaseIdx_ipCount_SignUp,
+    DatabaseIdx_ipCount_Login,
+    DatabaseIdx_ipCount_Admin
+};
+// DbIdx_ipCount[postType_0signup_1login_2_admin]
 
 void http_serve(void) {
     int server_fd = get_server_fd();
@@ -63,7 +74,7 @@ void http_serve(void) {
         DXhttp_print_debug("get postType_0signup_1login_2_admin is :%d [%s]", postType_0signup_1login_2_admin, postType_str );
 
         char *ip = http_get_client_ip(client_fd, rece_buffer);
-        rt = redis_check_ip(ip, redis_conf, DatabaseIdx_SignUp) ;
+        rt = redis_check_ip(ip, redis_conf, DbIdx_ipCount[postType_0signup_1login_2_admin]) ;
         if (rt) {
             DXhttp_print_debug("IP check failed for %s, rt %d", ip, rt );
             send_response(client_fd, 422, "Unprocessable Entity", "22:%d", rt);
@@ -89,10 +100,20 @@ void http_serve(void) {
             char signup_sesv[33] = {0}; // Declare once, used in both branches
             gen_a_new_md5sum_hex_32byte(signup_sess);
             gen_a_new_md5sum_hex_32byte(signup_sesv);
-            //redis_save_key_to_redis_with_ttl(DatabaseIdx_SignUp, 300, "signup_sess", signup_sesv, signup_sess, redis_conf);
-            rt = redis_set_key_value(redis_conf, DatabaseIdx_SignUp, "SET signup_sess:%s %s EX %d", signup_sesv, signup_sess, 300);
-            //send_response(client_fd, 200, "OK", "{\"ver\": 1, \"signup_sess\": \"%s\"}", signup_sesv);
-            send_response_with_new_signup_sess(client_fd, 200, signup_sess, signup_sesv);
+            rt = redis_set_key_value(redis_conf, DbIdx_ipCount[postType_0signup_1login_2_admin], "SET %s_sess:%s %s EX %d", postType_str, signup_sesv, signup_sess, 300);
+            if (rt) {
+                DXhttp_print_debug("set key error:%d", rt );
+                free(ip);
+                close(client_fd);
+                continue;
+            }
+            //char login_salt[33] = {0} ;
+            if ( 1 == postType_0signup_1login_2_admin ){
+                //rt = redis_get_string(redis_conf, 5, 32, login_salt, "loginUser:%s", req.username ) ;
+            }
+            else if ( 2 == postType_0signup_1login_2_admin ){
+            }
+            send_response_with_new_tmp_sess(client_fd, 200, signup_sess, signup_sesv);
 
             free(ip);
             close(client_fd);
@@ -129,10 +150,10 @@ void http_serve(void) {
         }
         DXhttp_print_debug("username/passwd/signup_salt check more details: all looks good");
 
-        char dbSavedSignUpSalt[33] ;
-        rt = redis_get_string(redis_conf, DatabaseIdx_SignUp, 32, dbSavedSignUpSalt, "signup_sess:%s", req.signup_salt ) ;
+        char dbSavedVerifyTmpSalt[33] ;
+        rt = redis_get_string(redis_conf, DbIdx_ipCount[postType_0signup_1login_2_admin], 32, dbSavedVerifyTmpSalt, "%s_sess:%s", postType_str, req.signup_salt ) ;
         if ( rt ) {
-            DXhttp_print_debug("no such a signup salt found!" );
+            DXhttp_print_debug("no such a %s salt found! :%d" , postType_str, rt);
             send_response(client_fd, 422, "Unprocessable Entity", "16:%d", rt );
             free(req.username);
             free(req.passwd);
@@ -142,10 +163,10 @@ void http_serve(void) {
             continue;
         }
 
-        char signUpCookieBuf[33] ;
-        rt = cookie_extract(rece_buffer, n, signUpCookieBuf, sizeof(signUpCookieBuf), "signup_session" );
+        char verifyTmpValue[33] ;
+        rt = cookie_extract(rece_buffer, n, verifyTmpValue, sizeof(verifyTmpValue), "%s_sess", postType_str );
         if ( rt ) {
-            DXhttp_print_debug("no such a signup salt found!" );
+            DXhttp_print_debug("no such a %s cookie found!  :%d", postType_str, rt );
             send_response(client_fd, 422, "Unprocessable Entity", "18:%d", rt );
             free(req.username);
             free(req.passwd);
@@ -154,11 +175,11 @@ void http_serve(void) {
             close(client_fd);
             continue;
         }
-        DXhttp_print_debug(" dbSavedSignUpSalt [%s], signUpCookieBuf [%s]", dbSavedSignUpSalt, signUpCookieBuf);
+        DXhttp_print_debug(" dbSavedVerifyTmpSalt [%s], verifyTmpValue [%s]", dbSavedVerifyTmpSalt, verifyTmpValue);
 
-        rt = strncmp( dbSavedSignUpSalt, signUpCookieBuf, 33 );
+        rt = strncmp( dbSavedVerifyTmpSalt, verifyTmpValue, 33 );
         if ( 0 != rt ) {
-            DXhttp_print_debug(" dbSavedSignUpSalt[%s] and signUpCookieBuf[%s] not equal", dbSavedSignUpSalt, signUpCookieBuf );
+            DXhttp_print_debug(" dbSavedVerifyTmpSalt[%s] and verifyTmpValue[%s] not equal", dbSavedVerifyTmpSalt, verifyTmpValue );
             send_response(client_fd, 422, "Unprocessable Entity", "20");
             free(req.username);
             free(req.passwd);
@@ -171,7 +192,7 @@ void http_serve(void) {
         //rt = redis_check_username(req.username, redis_conf) ;
         long tmpLong ;
         tmpLong = -1 ;
-        rt = redis_get_int(redis_conf, DatabaseIdx_UserName, &tmpLong, "EXISTS user:%s", req.username ) ;
+        rt = redis_get_int(redis_conf, DatabaseIdx_salt_Login, &tmpLong, "EXISTS %sUser:%s", postType_str, req.username ) ;
         if ( rt || (tmpLong != 0 )) {
             DXhttp_print_debug("Username check failed, or already exist for %s, rt-> %d, tmpLong -> %ld", req.username, rt, tmpLong );
             send_response(client_fd, 422, "Unprocessable Entity", "24:%d:%ld", rt, tmpLong); // failed , or username exist,
@@ -182,15 +203,15 @@ void http_serve(void) {
             close(client_fd);
             continue;
         }
-        DXhttp_print_debug("Username check ok, not exist. can signup if salt/hash is correct.");
+        DXhttp_print_debug("Username check ok, not exist. can %s if salt/hash is correct.", postType_str );
 
-        /* in this case, dbSavedSignUpSalt == signUpCookieBuf, no more check/calc, just save it.
+        /* in this case, dbSavedVerifyTmpSalt == verifyTmpValue, no more check/calc, just save it.
         char hash[HASH_LEN + 1], salt[SALT_LEN + 1];
         if (! compute_signup_hash2(req.username, req.passwd, hash, salt)) { */
 
-        rt = redis_set_key_value(redis_conf, DatabaseIdx_SignUp, "SET signupOK:%s 1 EX %d", ip, SIGNUP_OK_TTL);
+        rt = redis_set_key_value(redis_conf, DbIdx_ipCount[postType_0signup_1login_2_admin], "SET signupOK:%s 1 EX %d", ip, SIGNUP_OK_TTL);
         if ( rt ) {
-            DXhttp_print_debug("[SET signupOK:%s 1 EX %d] failed, rt-> %d ", ip, SIGNUP_OK_TTL, rt);
+            DXhttp_print_debug("[SET %sOK:%s 1 EX %d] failed, rt-> %d ", postType_str, ip, SIGNUP_OK_TTL, rt);
             send_response(client_fd, 422, "Unprocessable Entity", "34:%d", rt); 
             free(req.username);
             free(req.passwd);
@@ -200,9 +221,12 @@ void http_serve(void) {
             continue;
         }
 
-        //if (!redis_store_user(req.username, hash, salt, ip, redis_conf)) {
-        rt = redis_hset_key_value_pair( redis_conf, DatabaseIdx_UserName, &tmpLong, NEW_USER_TTL_30d,
-                "HSET user:%s hash %s salt %s level 0 status active", req.username, req.passwd, req.signup_salt);
+        if ( 0 == postType_0signup_1login_2_admin ) {
+            rt = redis_hset_key_value_pair( redis_conf, DatabaseIdx_salt_Login, &tmpLong, NEW_USER_TTL_30d,
+                    "HSET loginUser:%s hash %s salt %s level 0 status active", req.username, req.passwd, req.signup_salt);
+        } else {
+            rt = 8388188 ; // under constructing
+        }
         if ( rt ) {
             DXhttp_print_debug("HSET failed, rt-> %d ", rt);
             send_response(client_fd, 422, "Unprocessable Entity", "44:%d", rt); 
@@ -214,7 +238,7 @@ void http_serve(void) {
             continue;
         }
 
-        DXhttp_print_debug("User signup successful");
+        DXhttp_print_debug("User %s successful", postType_str );
         send_response(client_fd, 200, "OK", NULL);
         free(req.username);
         free(req.passwd);

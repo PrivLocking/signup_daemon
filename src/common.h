@@ -4,8 +4,12 @@
 #define _GNU_SOURCE         /* See feature_test_macros(7) */
 /* Constants */
 
-#define DatabaseIdx_UserName 0
-#define DatabaseIdx_SignUp   5
+#define DatabaseIdx_salt_Login       0
+#define DatabaseIdx_salt_Admin       10
+#define DatabaseIdx_ipCount_SignUp   5
+#define DatabaseIdx_ipCount_Login    1
+#define DatabaseIdx_ipCount_Admin    12
+
 #define REQUEST_MAX_SIZE 1024
 #define SIGNUP_OK_TTL 3600
 #define SIGNUP_FAILED_TTL 3610
@@ -68,11 +72,13 @@ struct redis_config {
 
 extern char execBinaryMd5[] ;
 /* Function declarations */
-extern thread_local char postType_0signup_1login_2_admin ;
-extern thread_local char postType_str[10] ;
+extern thread_local int postType_0signup_1login_2_admin ;
+extern thread_local const char *postType_str ;
 extern thread_local redisContext *ctx ;
 extern thread_local int current_dbIdx ;
 extern              const char *postReqAhead[] ;
+extern              const int DbIdx_ipCount[] ;
+extern              const int DbIdx_salt[] ;
 
 
 /* Debug and utility functions */
@@ -116,12 +122,12 @@ char *http_get_client_ip(int client_fd, const char *buffer);
 void *thread_worker(void *arg);
 
 void gen_a_new_md5sum_hex_32byte(char *output) ;
-void send_response_with_new_signup_sess(int client_fd, int status, const char *signup_sess, const char *signup_sesv) ;
+void send_response_with_new_tmp_sess(int client_fd, int status, const char *signup_sess, const char *signup_sesv) ;
 
 int get_executable_md5(unsigned char *md5_digest) ;
 char *get_executable_md5_hex(void) ;
 bool string_check_a2f_0to9( char * buf , int len ) ;
-int cookie_extract(const char *buffer, size_t n, char *output_buf, size_t output_buf_size, const char *cookie_name) ;
+int cookie_extract(const char *buffer, size_t n, char *output_buf, size_t output_buf_size, const char *fmt, ...) ;
 int redis_get_string(struct redis_config *conf, int databaseIdx, int dstLen, char *dstBuf, const char *fmt, ... ) ;
 int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, const char *fmt, ... ) ;
 int redis_set_key_value(struct redis_config *conf, int databaseIdx, const char *fmt, ... ) ;

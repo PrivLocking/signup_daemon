@@ -1,9 +1,15 @@
 #include "common.h"
 
-int cookie_extract(const char *buffer, size_t n, char *output_buf, size_t output_buf_size, const char *cookie_name) {
-    if (!buffer || !output_buf || !cookie_name || output_buf_size < 2) {
+int cookie_extract(const char *buffer, size_t n, char *output_buf, size_t output_buf_size, const char *fmt, ...) {
+    if (!buffer || !output_buf || !fmt || output_buf_size < 2) {
         return 125001;
     }
+
+    char srcBuf[1024] ;
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(srcBuf,1024, fmt, args);
+    va_end(args);
 
     // Limit scan to headers only
     const char *header_end = memmem(buffer, n, "\r\n\r\n", 4);
@@ -18,7 +24,7 @@ int cookie_extract(const char *buffer, size_t n, char *output_buf, size_t output
     header_copy[header_len] = '\0';
 
     // Scan line by line
-    size_t name_len = strlen(cookie_name);
+    size_t name_len = strlen(srcBuf);
     char *line = strtok(header_copy, "\r\n");
     while (line) {
         if (strncasecmp(line, "Cookie:", 7) == 0) {
@@ -27,7 +33,7 @@ int cookie_extract(const char *buffer, size_t n, char *output_buf, size_t output
 
             // Search for the cookie by name
             const char *p = cookies;
-            while ((p = strstr(p, cookie_name))) {
+            while ((p = strstr(p, srcBuf))) {
                 if ((p == cookies || *(p - 1) == ' ' || *(p - 1) == ';') &&
                     strncmp(p + name_len, "=", 1) == 0) {
                     p += name_len + 1; // skip "name="

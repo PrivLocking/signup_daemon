@@ -5,16 +5,16 @@
  * @param {Object} messages - UI messages
  * @returns {Promise<string|null>} - Session ID or null if failed
  */
-async function getOrCreateSignupSession(messageElement, submitButton, messages) {
+async function getOrAskForAtmpSession(messageElement, submitButton, messages) {
     // Check if signup_session cookie exists
-    let signupSession = getCookie(`${funcName}_session`);
+    let tmpSession = getCookie(`${funcName}_session`);
     
     // If no cookie exists, request one
-    if (!signupSession) {
-        signupSession = await requestSignupSession(messageElement, submitButton, messages);
+    if (!tmpSession) {
+        tmpSession = await askForNewTmpSession(messageElement, submitButton, messages);
         
         // If we still don't have a session, show error
-        if (!signupSession) {
+        if (!tmpSession) {
             if (messageElement) messageElement.textContent = messages.too_more_tries + ":" + requestSignupSession_status + ":" + requestSignupSession_body ;
             if (submitButton) {
                 submitButton.disabled = false;
@@ -25,6 +25,6 @@ async function getOrCreateSignupSession(messageElement, submitButton, messages) 
         }
     }
     
-    return signupSession;
+    return tmpSession;
 }
 

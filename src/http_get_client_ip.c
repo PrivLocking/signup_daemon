@@ -1,6 +1,7 @@
 #include "common.h"
 
 char *http_get_client_ip(int client_fd, const char *buffer) {
+    DXhttp_print_debug("%d [%.25s]", strlen( buffer ), buffer );
     // First, try to extract from HTTP headers
     if (buffer) {
         // Try to get X-Real-IP

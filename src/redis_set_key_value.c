@@ -1,6 +1,6 @@
 #include "common.h"
 
-// rt = redis_set_key_value(redis_conf, DatabaseIdx_SignUp, "SET signup_sess:%s %s EX %d", signup_sesv, signup_sess, 300);
+// rt = redis_set_key_value(redis_conf, DbIdx_ipCount[postType_0signup_1login_2_admin], "SET signup_sess:%s %s EX %d", signup_sesv, signup_sess, 300);
 int redis_set_key_value(struct redis_config *conf, int databaseIdx, const char *fmt, ... ) {
     char srcBuf[1024] ;
     va_list args;

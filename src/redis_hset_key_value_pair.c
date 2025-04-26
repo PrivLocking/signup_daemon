@@ -1,6 +1,6 @@
 #include "common.h"
 
-// rt = redis_hset_key_value_pair( redis_conf, DatabaseIdx_UserName, &tmpLong, NEW_USER_TTL_30d, "HSET user:%s hash %s salt %s level 0 status active", req.username, req.passwd, req.signup_salt);
+// rt = redis_hset_key_value_pair( redis_conf, DatabaseIdx_salt_Login, &tmpLong, NEW_USER_TTL_30d, "HSET user:%s hash %s salt %s level 0 status active", req.username, req.passwd, req.signup_salt);
 int redis_hset_key_value_pair(struct redis_config *conf, int databaseIdx, long *updateAmount, int ttl, const char *fmt, ... ) {
     char srcBuf[1024];
     va_list args;
