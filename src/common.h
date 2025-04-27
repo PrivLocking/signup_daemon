@@ -56,7 +56,7 @@
 #include <threads.h>
 
 /* Data structures */
-struct signup_request {
+struct session_request {
     int ver;
     char *username;
     char *passwd;
@@ -112,7 +112,7 @@ void http_serve(void);
 int http_should_keep_running(void);
 int get_server_fd(void);
 const char *extract_client_ip(const char *http_request);
-bool parse_signup_json(const char *body, struct signup_request *req);
+bool parse_session_json(const char *body, struct session_request *req);
 bool validate_username(const char *username);
 bool validate_passwd(const char *passwd);
 bool validate_signup_salt(const char *salt) ;
@@ -134,5 +134,6 @@ int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, cons
 int redis_set_key_value(struct redis_config *conf, int databaseIdx, const char *fmt, ... ) ;
 int redis_hset_key_value_pair(struct redis_config *conf, int databaseIdx, long *updateAmount, int ttl, const char *fmt, ... ) ;
 int check_post_type_path(char *buffer, size_t n) ;
+int sess_handle_new_request(struct redis_config *conf, struct session_request *req , int client_fd ) ;
 
 #endif /* COMMON_H */

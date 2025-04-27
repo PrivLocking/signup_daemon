@@ -33,8 +33,9 @@ sourceM := src/string_check_a2f_0to9.c
 sourceN := src/utils.c
 sourceO:= src/get_executable_md5.c
 sourceP:= src/check-post-type-path.c
+sourceQ:= src/sess_handle_new_request.c
 
-sourceListIdx:=0 1 2 3 4 5 6 7 8 A D E F G H I J K L M N O P
+sourceListIdx:=0 1 2 3 4 5 6 7 8 A D E F G H I J K L M N O P Q
 sourceList:=$(foreach ssss,$(sourceListIdx),$(source$(ssss)))
 
 

@@ -1,7 +1,7 @@
 #include "common.h"
 
 // {"username":"aaabbbcccdddeee4","signup_salt":"b0e082f57264abc6a67bc78cbd4ae159","passwd":"5f669ecdfa48510b198c9019cb13691daab2b279a427d8293c0e0f2a3d316c75"}]
-bool parse_signup_json(const char *body, struct signup_request *req) {
+bool parse_session_json(const char *body, struct session_request *req) {
     if ( !body || !req ) {
         DXhttp_print_debug("parameter error" );
         return 123010;

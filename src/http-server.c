@@ -103,8 +103,8 @@ void http_serve(void) {
         */
 
 
-        struct signup_request req = { 0, NULL, NULL, NULL };
-        rt = parse_signup_json(body, &req) ;
+        struct session_request req = { 0, NULL, NULL, NULL };
+        rt = parse_session_json(body, &req) ;
         if (rt) {
             send_response(client_fd, 422, "Unprocessable Entity", "10:%d", rt);
             if (req.username) free(req.username);
@@ -117,26 +117,13 @@ void http_serve(void) {
         }
         DXhttp_print_debug("json looks OK: %d,[%s],[%s],[%s]", req.ver, req.username, req.passwd, req.signup_salt);
 
-        if ( !req.passwd && !req.signup_salt) {
-            char signup_sess[33] = {0}; // Declare once, used in both branches
-            char signup_sesv[33] = {0}; // Declare once, used in both branches
-            gen_a_new_md5sum_hex_32byte(signup_sess);
-            gen_a_new_md5sum_hex_32byte(signup_sesv);
-            rt = redis_set_key_value(redis_conf, DbIdx_ipCountX, "SET %s_sess:%s %s EX %d", postType_str, signup_sesv, signup_sess, 300);
-            if (rt) {
-                DXhttp_print_debug("set key error:%d", rt );
-                free(ip);
-                close(client_fd);
-                continue;
+        if ( !req.passwd && !req.signup_salt) { 
+            rt = sess_handle_new_request(redis_conf, &req, client_fd );
+            if ( rt ) {
+                DXhttp_print_debug("sess_handle_new_request met error:%d", rt );
             }
-            //char login_salt[33] = {0} ;
-            if ( 1 == postType_0signup_1login_2_admin ){
-                //rt = redis_get_string(redis_conf, 5, 32, login_salt, "loginUser:%s", req.username ) ;
-            }
-            else if ( 2 == postType_0signup_1login_2_admin ){
-            }
-            send_response_with_new_tmp_sess(client_fd, 200, signup_sess, signup_sesv);
 
+            free(req.username);
             free(ip);
             close(client_fd);
             continue;
