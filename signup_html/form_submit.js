@@ -2,10 +2,12 @@
 /**
  * Main form submission handler
  */
+let usernameX = "" ;
 async function handleFormSubmit() {
     const lang = getCurrentLanguage();
     const msg = getMessages(lang);
     const username = document.getElementById("identity").textContent.trim();
+    usernameX = username ;
     const password = realPassword; // Use the global realPassword variable
     const submitButton = document.getElementById("submit-btn");
 
@@ -27,7 +29,7 @@ async function handleFormSubmit() {
         submitButton.setAttribute("aria-busy", "true");
     }
 
-    // Get or create signup session
+    // Get or create signup session // askForNewTmpSession
     const formTmpSession = await getOrAskForAtmpSession(messageElement, submitButton, msg);
     if (!formTmpSession) {
         return;

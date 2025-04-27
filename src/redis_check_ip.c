@@ -39,7 +39,7 @@ int redis_check_ip(const char *ip, struct redis_config *conf, int dbIdx) {
         return 111019; // counter > 5 
     }
 
-    DXprint_debug("succeed get:%s, faile counter %ld", ip, tmpLong );
+    DXprint_debug("succeed get:%s, faile counter %ld, less than %d, OK.", ip, tmpLong, maxAllowFailed );
     return 0;
 }
 

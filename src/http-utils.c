@@ -29,6 +29,7 @@ bool validate_username(const char *username) {
     return true;
 }
 
+//    if ( !string_check_a2f_0to9( req->signup_salt, 32 )) {
 bool validate_passwd(const char *passwd) {
     if (!passwd || strlen(passwd) != PASSWD_LEN) {
         DBhttp_print_debug("Password validation failed: length %zu (expected %d)",

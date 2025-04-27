@@ -27,10 +27,19 @@ async function askForNewTmpSession(messageElement, submitButton, messages) {
     requestSignupSession_status = "" ;
     requestSignupSession_header = "" ;
     try {
+        let bodyX ;
+        if ( "login" === funcName ){
+            bodyX = JSON.stringify({
+                ver: 1,
+                username: usernameX
+            }) ;
+        } else {
+            bodyX = JSON.stringify({ ver:1 }) ;
+        }
         const sessionResponse = await fetch(funcName, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({})
+            body: bodyX
         });
         requestSignupSession_status = sessionResponse.status ;
         requestSignupSession_header = sessionResponse.headers ;

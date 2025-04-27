@@ -89,6 +89,8 @@ int check_post_type_path(char *buffer, size_t n) {
             //strncpy(postType_str, last_part, pattern_len); postType_str[9] = 0 ;
             postType_0signup_1login_2_admin = i ;
             postType_str = postReqAhead[ i ] ;
+            extern              const int DbIdx_ipCount[] ;
+            DbIdx_ipCountX = DbIdx_ipCount[postType_0signup_1login_2_admin] ;
             return i;
         }
     }

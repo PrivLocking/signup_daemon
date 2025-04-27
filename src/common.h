@@ -57,6 +57,7 @@
 
 /* Data structures */
 struct signup_request {
+    int ver;
     char *username;
     char *passwd;
     char *signup_salt;
@@ -77,7 +78,7 @@ extern thread_local const char *postType_str ;
 extern thread_local redisContext *ctx ;
 extern thread_local int current_dbIdx ;
 extern              const char *postReqAhead[] ;
-extern              const int DbIdx_ipCount[] ;
+extern                    int DbIdx_ipCountX ;
 extern              const int DbIdx_salt[] ;
 
 
