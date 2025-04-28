@@ -1,3 +1,4 @@
+Makefile
 src/check-post-type-path.c
 src/common.h
 src/cookie_extract.c
@@ -12,11 +13,10 @@ src/main.c
 src/redis-store.c
 src/redis.c
 src/redis_check_ip.c
+src/redis_get_hget_string.c
 src/redis_get_int.c
-src/redis_get_string.c
-src/redis_hset_key_value_pair.c
 src/redis_increment.c
-src/redis_set_key_value.c
+src/redis_set_hset_key_value.c
 src/send_response.c
 src/send_response_with_new_signup_sess.c
 src/server.c

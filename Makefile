@@ -20,11 +20,10 @@ source6 := src/http-utils.c
 source7 := src/main.c
 source8 := src/redis_check_ip.c
 sourceA := src/redis_increment.c
-sourceD := src/redis_set_key_value.c
-sourceE := src/redis_hset_key_value_pair.c
+sourceD := src/redis_set_hset_key_value.c
 sourceF := src/redis-store.c
 sourceG := src/redis.c
-sourceH := src/redis_get_string.c
+sourceH := src/redis_get_hget_string.c
 sourceI := src/redis_get_int.c
 sourceJ := src/send_response.c
 sourceK := src/send_response_with_new_signup_sess.c
@@ -35,7 +34,7 @@ sourceO:= src/get_executable_md5.c
 sourceP:= src/check-post-type-path.c
 sourceQ:= src/sess_handle_new_request.c
 
-sourceListIdx:=0 1 2 3 4 5 6 7 8 A D E F G H I J K L M N O P Q
+sourceListIdx:=0 1 2 3 4 5 6 7 8 A D F G H I J K L M N O P Q
 sourceList:=$(foreach ssss,$(sourceListIdx),$(source$(ssss)))
 
 
@@ -125,7 +124,7 @@ vpc:
 
 vp vim_prepare : vpc
 	mkdir -p _vim/
-	echo $(Makefile)                                     > _vim/file01.txt
+	echo Makefile                                        > _vim/file01.txt
 	-test -f Makefile.env && echo Makefile.env          >> _vim/file01.txt
 	find -type f -name "*.c" -o -name "*.h" \
 		|grep -v '\.bak[0-9]*' \

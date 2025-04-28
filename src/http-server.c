@@ -118,6 +118,7 @@ void http_serve(void) {
         DXhttp_print_debug("json looks OK: %d,[%s],[%s],[%s]", req.ver, req.username, req.passwd, req.signup_salt);
 
         if ( !req.passwd && !req.signup_salt) { 
+            DXhttp_print_debug("Empty req, means new req." );
             rt = sess_handle_new_request(redis_conf, &req, client_fd );
             if ( rt ) {
                 DXhttp_print_debug("sess_handle_new_request met error:%d", rt );
@@ -128,9 +129,10 @@ void http_serve(void) {
             close(client_fd);
             continue;
         }
+        DXhttp_print_debug("nor-Empty req, need more analyze." );
 
         char dbSavedVerifyTmpSalt[33] ;
-        rt = redis_get_string(redis_conf, DbIdx_ipCountX, 32, dbSavedVerifyTmpSalt, "%s_sess:%s", postType_str, req.signup_salt ) ;
+        rt = redis_get_hget_string(redis_conf, DbIdx_ipCountX, 32, dbSavedVerifyTmpSalt, "GET %s_sess:%s", postType_str, req.signup_salt ) ;
         if ( rt ) {
             DXhttp_print_debug("no such a %s salt found! :%d" , postType_str, rt);
             send_response(client_fd, 422, "Unprocessable Entity", "16:%d", rt );
@@ -188,7 +190,7 @@ void http_serve(void) {
         char hash[HASH_LEN + 1], salt[SALT_LEN + 1];
         if (! compute_signup_hash2(req.username, req.passwd, hash, salt)) { */
 
-        rt = redis_set_key_value(redis_conf, DbIdx_ipCountX, "SET signupOK:%s 1 EX %d", ip, SIGNUP_OK_TTL);
+        rt = redis_set_hset_key_value(redis_conf, DbIdx_ipCountX, SIGNUP_OK_TTL, "SET signupOK:%s 1", ip);
         if ( rt ) {
             DXhttp_print_debug("[SET %sOK:%s 1 EX %d] failed, rt-> %d ", postType_str, ip, SIGNUP_OK_TTL, rt);
             send_response(client_fd, 422, "Unprocessable Entity", "34:%d", rt); 
@@ -201,7 +203,9 @@ void http_serve(void) {
         }
 
         if ( 0 == postType_0signup_1login_2_admin ) {
-            rt = redis_hset_key_value_pair( redis_conf, DatabaseIdx_salt_Login, &tmpLong, NEW_USER_TTL_30d,
+            //rt = redis_hset_key_value_pair( redis_conf, DatabaseIdx_salt_Login, &tmpLong, NEW_USER_TTL_30d,
+            //        "HSET loginUser:%s hash %s salt %s level 0 status active", req.username, req.passwd, req.signup_salt);
+            rt = redis_set_hset_key_value( redis_conf, DatabaseIdx_salt_Login, NEW_USER_TTL_30d,
                     "HSET loginUser:%s hash %s salt %s level 0 status active", req.username, req.passwd, req.signup_salt);
         } else {
             rt = 8388188 ; // under constructing

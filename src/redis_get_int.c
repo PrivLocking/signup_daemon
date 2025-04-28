@@ -1,55 +1,70 @@
 #include "common.h"
 
-// rt = redis_get_int(redis_conf, 5, &dstInt, "signup_sess:%s", req.signup_salt ) ;
+// Usage examples:
+// rt = redis_get_int(redis_conf, 5, &dstInt, "GET counter:%s", user_id);
+// rt = redis_get_int(redis_conf, 5, &dstInt, "HGET user_stats:%s score", user_id);
+// rt = redis_get_int(redis_conf, 5, &dstInt, "EXISTS user_stats:%s score", user_id);
+// rt = redis_get_int(redis_conf, 5, &dstInt, "EXPIRE user_stats:%s %d", user_id, 300 );
 int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, const char *fmt, ... ) {
-    char srcBuf[1024] ;
+    char cmdBuf[1024];
     va_list args;
     va_start(args, fmt);
-    vsnprintf(srcBuf,1024, fmt, args);
+    vsnprintf(cmdBuf, 1024, fmt, args);
     va_end(args);
 
     if (!redis_connect_thread(conf, databaseIdx)) return 129001;
 
-    redisReply *reply ;
-    reply = redisCommand(ctx, srcBuf);
+    redisReply *reply;
+    reply = redisCommand(ctx, cmdBuf);
     if (!reply) {
-        DXprint_debug("Redis 129007 [%s] error: !reply" , srcBuf);
-        redisFree(ctx); ctx = NULL ;
+        DXprint_debug("Redis 129007 [%s] error: !reply", cmdBuf);
+        redisFree(ctx); ctx = NULL;
         return 129008;
     }
     if (reply->type == REDIS_REPLY_ERROR) {
-        DXprint_debug("Redis 129010 ERROR: [%s] -> [%s]", srcBuf, reply->str);  // ← THIS WILL SHOW THE ACTUAL ERROR
+        DXprint_debug("Redis 129010 ERROR: [%s] -> [%s]", cmdBuf, reply->str);
         freeReplyObject(reply);
         return 129011;
     }
 
+    // Handle direct integer reply
     if (reply->type == REDIS_REPLY_INTEGER) {
-        *dstInt = reply-> integer ;
-        DXprint_debug("Redis 129015 GET int succeed: reply->type(%d) : get [%ld] by [%s]: " REDIS_TYPE , reply->type, *dstInt, srcBuf );
+        *dstInt = reply->integer;
+        DXprint_debug("Redis 129015 Command int succeed: reply->type(%d) : get [%ld] by [%s]: REDIS_TYPE", 
+                    reply->type, *dstInt, cmdBuf);
         freeReplyObject(reply);
         return 0;
     }
 
-    if (!reply->str) {
-        DXprint_debug("Redis 129025 GET int error: reply->str == null : [%s]", srcBuf );
+    // Handle string replies that need conversion to int
+    if (reply->type == REDIS_REPLY_STRING) {
+        if (!reply->str) {
+            DXprint_debug("Redis 129025 Command int error: reply->str == null : [%s]", cmdBuf);
+            freeReplyObject(reply);
+            return 129026;
+        }
+
+        char *endptr;
+        errno = 0;  // Reset errno before calling strtol, thread safe
+        long value = strtol(reply->str, &endptr, 10);  // Base 10
+        
+        // Check for conversion errors
+        if (errno != 0 || *endptr != '\0' || reply->str == endptr) {
+            DXprint_debug("Error: 129035 Redis reply cannot be converted to a valid integer! [%s]", cmdBuf);
+            freeReplyObject(reply);
+            return 129036;
+        }
+
+        *dstInt = value;
+        DXprint_debug("Sent: 129045 Command int: [%s] | Received(long int): %ld", cmdBuf, *dstInt);
+        
         freeReplyObject(reply);
-        return 129026;
+        return 0;
     }
 
-    char *endptr;
-    errno = 0;  // Reset errno before calling strtol , thread safe
-    long value = strtol(reply->str, &endptr, 10);  // Base 10
-    // Check for conversion errors
-    if (errno != 0 || *endptr != '\0' || reply->str == endptr) {
-        DXprint_debug("Error: 129035 Redis received a valid integer!\n");
-        freeReplyObject(reply);
-        return 129036 ;
-    }
-
-    *dstInt = value ;
-    DXprint_debug("Sent: 129045 GET int: [%s] | Received(long int): %ld", srcBuf, *dstInt );
-
+    // Handle case where reply is neither an integer nor a string
+    DXprint_debug("Redis 129050 Command error: reply->type(%d) not INTEGER or STRING : [%s]", 
+                reply->type, cmdBuf);
     freeReplyObject(reply);
-    return 0;
+    return 129051;
 }
-

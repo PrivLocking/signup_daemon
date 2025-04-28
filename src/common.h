@@ -129,10 +129,9 @@ int get_executable_md5(unsigned char *md5_digest) ;
 char *get_executable_md5_hex(void) ;
 bool string_check_a2f_0to9( char * buf , int len ) ;
 int cookie_extract(const char *buffer, size_t n, char *output_buf, size_t output_buf_size, const char *fmt, ...) ;
-int redis_get_string(struct redis_config *conf, int databaseIdx, int dstLen, char *dstBuf, const char *fmt, ... ) ;
+int redis_get_hget_string(struct redis_config *conf, int databaseIdx, int dstLen, char *dstBuf, const char *fmt, ... ) ;
 int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, const char *fmt, ... ) ;
-int redis_set_key_value(struct redis_config *conf, int databaseIdx, const char *fmt, ... ) ;
-int redis_hset_key_value_pair(struct redis_config *conf, int databaseIdx, long *updateAmount, int ttl, const char *fmt, ... ) ;
+int redis_set_hset_key_value(struct redis_config *conf, int databaseIdx, int TTL, const char *fmt, ... ) ;
 int check_post_type_path(char *buffer, size_t n) ;
 int sess_handle_new_request(struct redis_config *conf, struct session_request *req , int client_fd ) ;
 
