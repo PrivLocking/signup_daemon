@@ -103,6 +103,6 @@ char *get_executable_md5_hex(void) {
         execBinaryMd5[32] = 0 ;
         snprintf( execBinaryMd5cookie, 32, "MD5=%.6s", execBinaryMd5+26 );
     }
-    DBprint_debug("Executable file's md5 is [%s]\n", execBinaryMd5 );
+    DBprint_debug("Executable file's md5 is [%s]\n\n\n", execBinaryMd5 );
     return execBinaryMd5;
 }

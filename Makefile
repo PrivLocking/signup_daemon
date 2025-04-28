@@ -14,14 +14,14 @@ source0 := src/cookie_extract.c
 source1 := src/gen_a_new_md5sum_hex_32byte.c
 source2 := src/hash.c
 source3 := src/http_get_client_ip.c
-source4 := src/http-parser.c
-source5 := src/http-server.c
-source6 := src/http-utils.c
+source4 := src/http_parser.c
+source5 := src/http_server_main_loop.c
+source6 := src/http_utils.c
 source7 := src/main.c
 source8 := src/redis_check_ip.c
 sourceA := src/redis_increment.c
 sourceD := src/redis_set_hset_key_value.c
-sourceF := src/redis-store.c
+sourceF := src/redis_store.c
 sourceG := src/redis.c
 sourceH := src/redis_get_hget_string.c
 sourceI := src/redis_get_int.c
@@ -31,10 +31,12 @@ sourceL := src/server.c
 sourceM := src/string_check_a2f_0to9.c
 sourceN := src/utils.c
 sourceO:= src/get_executable_md5.c
-sourceP:= src/check-post-type-path.c
+sourceP:= src/check_post_type_path.c
 sourceQ:= src/sess_handle_new_request.c
+sourceR:= src/http_main_loop_clean_before_exit.c
+sourceS:= src/http_server_main_loop_handler.c
 
-sourceListIdx:=0 1 2 3 4 5 6 7 8 A D F G H I J K L M N O P Q
+sourceListIdx:=0 1 2 3 4 5 6 7 8 A D F G H I J K L M N O P Q R S 
 sourceList:=$(foreach ssss,$(sourceListIdx),$(source$(ssss)))
 
 

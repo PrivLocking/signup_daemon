@@ -135,5 +135,6 @@ int check_post_type_path(char *buffer, size_t n) ;
 int sess_handle_new_request(struct redis_config *conf, struct session_request *req , int client_fd ) ;
 void send_response_sess2(int client_fd, char *sess, char *sesv ) ;
 void send_response_sess3(int client_fd, char *sess, char *sesv, char *salt ) ;
+void http_main_loop_clean_before_exit( int *client_fd, char **ip, struct session_request * req );
 
 #endif /* COMMON_H */
