@@ -15,6 +15,43 @@ function handleSessionError(messageElement, submitButton, messages) {
     }
 }
 
+function jsonGetHex32(jsonSrc, name) {
+    return jsonGetHexLen(jsonSrc, name, 32) ;
+}
+function jsonGetHexLen(jsonSrc, name, len) {
+    try {
+        if (!jsonSrc || typeof jsonSrc !== 'object') {
+            console.log('Invalid JSON source');
+            return null;
+        }
+        if (typeof name !== 'string') {
+            console.log('Name must be a string');
+            return null ;
+        }
+
+        // Check JSON version first
+        if (jsonSrc.ver !== 1) {
+            console.log("Unsupported JSON version:", jsonSrc.ver);
+            return null;
+        }
+
+        const sess = jsonSrc[`${name}`];
+
+        if (!sess || typeof sess !== 'string' || sess.length !== len || !/^[0-9a-f]+$/.test(sess)) {
+            console.log('Value is not a valid 32-byte hex string');
+            return null ;
+        }
+        return sess;
+
+    } catch (jsonError) {
+        // If JSON parsing fails, return error immediately
+        console.error("Failed to parse response as JSON:", jsonError);
+        handleSessionError(messageElement, submitButton, messages);
+        requestSignupSession_body = "Failed to parse response as JSON" ;
+        return null;
+    }
+}
+
 /**
  * Requests a new signup session from the server
  * @returns {Promise<string|null>} - Session ID or null if failed
@@ -22,16 +59,18 @@ function handleSessionError(messageElement, submitButton, messages) {
 let requestSignupSession_body = "" ;
 let requestSignupSession_status = "" ;
 let requestSignupSession_header = "" ;
+let requestSignupSession_json = null ;
 async function askForNewTmpSession(messageElement, submitButton, messages) {
     requestSignupSession_body = "" ;
     requestSignupSession_status = "" ;
     requestSignupSession_header = "" ;
+    requestSignupSession_json = null ;
     try {
         let bodyX ;
         if ( "login" === funcName ){
             bodyX = JSON.stringify({
                 ver: 1,
-                username: usernameX
+                username: realUsername
             }) ;
         } else {
             bodyX = JSON.stringify({ ver:1 }) ;
@@ -52,6 +91,9 @@ async function askForNewTmpSession(messageElement, submitButton, messages) {
             try {
                 // Try to parse as JSON
                 const jsonResponse = JSON.parse(responseContent);
+
+                requestSignupSession_json = jsonResponse ;
+                return jsonResponse ;
                 
                 // Check JSON version first
                 if (jsonResponse.ver !== 1) {

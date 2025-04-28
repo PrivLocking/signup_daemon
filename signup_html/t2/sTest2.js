@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('login-sha256-hash').textContent = sha256Hash;
 
       // Step 4: Combine login session with signup hash
-      const loginSessionHash = `${loginSession}:${sha256Hash}`;
+      const loginSessionHash = `${loginSession}:${username}:${sha256Hash}`;
       document.getElementById('login-session-hash').textContent = loginSessionHash;
 
       // Step 5: Calculate Argon2 hash of loginSessionHash
@@ -202,7 +202,8 @@ document.addEventListener('DOMContentLoaded', function() {
       // Create final JSON payload
       const jsonPayload = {
         "username": username,
-        "login_salt": signupSession,
+        //"login_salt": signupSession,
+        "login_salt": loginSession,
         "passwd": loginSha256Hash
       };
 

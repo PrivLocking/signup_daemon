@@ -2,12 +2,12 @@
 /**
  * Main form submission handler
  */
-let usernameX = "" ;
+let realUsername = "";
 async function handleFormSubmit() {
     const lang = getCurrentLanguage();
     const msg = getMessages(lang);
     const username = document.getElementById("identity").textContent.trim();
-    usernameX = username ;
+    realUsername = username ;
     const password = realPassword; // Use the global realPassword variable
     const submitButton = document.getElementById("submit-btn");
 
@@ -30,14 +30,14 @@ async function handleFormSubmit() {
     }
 
     // Get or create signup session // askForNewTmpSession
-    const formTmpSession = await getOrAskForAtmpSession(messageElement, submitButton, msg);
-    if (!formTmpSession) {
+    const tmpJson = await getOrAskForAtmpSession(messageElement, submitButton, msg);
+    if (!tmpJson) {
         return;
     }
 
     
-    //const jsonPass = await JSON.stringify({ "username": username, "signup_salt":formTmpSession , "passwd": passwdHash });
-    const jsonPass = await calc_passHash( );
+    //const jsonPass = await JSON.stringify({ "username": username, "signup_salt":tmpJson , "passwd": passwdHash });
+    const jsonPass = await calc_passHash( tmpJson );
 
     if ( !jsonPass ) {
         console.error("Error in passHash calcing." );
@@ -48,7 +48,8 @@ async function handleFormSubmit() {
     try {
 
         // Send JSON to /signup
-        const response = await fetch("signup", {
+        //const response = await fetch("signup", {
+        const response = await fetch(funcName, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: jsonPass
