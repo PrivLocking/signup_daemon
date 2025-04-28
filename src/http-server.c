@@ -68,7 +68,7 @@ void http_serve(void) {
         int rt = check_post_type_path( rece_buffer, n ) ;
         if ( rt < 0 ) {
             DXhttp_print_debug("Invalid request, expected POST /path, got: %d:[%.25s]", rt, rece_buffer);
-            send_response(client_fd, 422, "Unprocessable Entity", "20:%d:[%.25s]", rt, rece_buffer);
+            send_response(client_fd, 422, "Unprocessable Entity", NULL, "20:%d:[%.25s]", rt, rece_buffer);
             close(client_fd);
             continue;
         }
@@ -78,7 +78,7 @@ void http_serve(void) {
         rt = redis_check_ip(ip, redis_conf, DbIdx_ipCountX) ;
         if (rt) {
             DXhttp_print_debug("IP check failed for %s, rt %d", ip, rt );
-            send_response(client_fd, 422, "Unprocessable Entity", "22:%d", rt);
+            send_response(client_fd, 422, "Unprocessable Entity", NULL, "22:%d", rt);
             free(ip);
             close(client_fd);
             continue;
@@ -87,7 +87,7 @@ void http_serve(void) {
         char *body = strstr(rece_buffer, "\r\n\r\n");
         if (!body) {
             DXhttp_print_debug("No request body found");
-            send_response(client_fd, 422, "Unprocessable Entity", "24");
+            send_response(client_fd, 422, "Unprocessable Entity", NULL, "24");
             free(ip);
             close(client_fd);
             continue;
@@ -106,7 +106,7 @@ void http_serve(void) {
         struct session_request req = { 0, NULL, NULL, NULL };
         rt = parse_session_json(body, &req) ;
         if (rt) {
-            send_response(client_fd, 422, "Unprocessable Entity", "10:%d", rt);
+            send_response(client_fd, 422, "Unprocessable Entity", NULL, "10:%d", rt);
             if (req.username) free(req.username);
             if (req.passwd) free(req.passwd);
             if (req.signup_salt) free(req.signup_salt);
@@ -135,7 +135,7 @@ void http_serve(void) {
         rt = redis_get_hget_string(redis_conf, DbIdx_ipCountX, 32, dbSavedVerifyTmpSalt, "GET %s_sess:%s", postType_str, req.signup_salt ) ;
         if ( rt ) {
             DXhttp_print_debug("no such a %s salt found! :%d" , postType_str, rt);
-            send_response(client_fd, 422, "Unprocessable Entity", "16:%d", rt );
+            send_response(client_fd, 422, "Unprocessable Entity", NULL, "16:%d", rt );
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
@@ -148,7 +148,7 @@ void http_serve(void) {
         rt = cookie_extract(rece_buffer, n, verifyTmpValue, sizeof(verifyTmpValue), "%s_sess", postType_str );
         if ( rt ) {
             DXhttp_print_debug("no such a %s cookie found!  :%d", postType_str, rt );
-            send_response(client_fd, 422, "Unprocessable Entity", "18:%d", rt );
+            send_response(client_fd, 422, "Unprocessable Entity", NULL, "18:%d", rt );
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
@@ -161,7 +161,7 @@ void http_serve(void) {
         rt = strncmp( dbSavedVerifyTmpSalt, verifyTmpValue, 33 );
         if ( 0 != rt ) {
             DXhttp_print_debug(" dbSavedVerifyTmpSalt[%s] and verifyTmpValue[%s] not equal", dbSavedVerifyTmpSalt, verifyTmpValue );
-            send_response(client_fd, 422, "Unprocessable Entity", "20");
+            send_response(client_fd, 422, "Unprocessable Entity", NULL, "20");
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
@@ -176,7 +176,7 @@ void http_serve(void) {
         rt = redis_get_int(redis_conf, DatabaseIdx_salt_Login, &tmpLong, "EXISTS %sUser:%s", postType_str, req.username ) ;
         if ( rt || (tmpLong != 0 )) {
             DXhttp_print_debug("Username check failed, or already exist for %s, rt-> %d, tmpLong -> %ld", req.username, rt, tmpLong );
-            send_response(client_fd, 422, "Unprocessable Entity", "24:%d:%ld", rt, tmpLong); // failed , or username exist,
+            send_response(client_fd, 422, "Unprocessable Entity", NULL, "24:%d:%ld", rt, tmpLong); // failed , or username exist,
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
@@ -193,7 +193,7 @@ void http_serve(void) {
         rt = redis_set_hset_key_value(redis_conf, DbIdx_ipCountX, SIGNUP_OK_TTL, "SET signupOK:%s 1", ip);
         if ( rt ) {
             DXhttp_print_debug("[SET %sOK:%s 1 EX %d] failed, rt-> %d ", postType_str, ip, SIGNUP_OK_TTL, rt);
-            send_response(client_fd, 422, "Unprocessable Entity", "34:%d", rt); 
+            send_response(client_fd, 422, "Unprocessable Entity", NULL, "34:%d", rt); 
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
@@ -212,7 +212,7 @@ void http_serve(void) {
         }
         if ( rt ) {
             DXhttp_print_debug("HSET failed, rt-> %d ", rt);
-            send_response(client_fd, 422, "Unprocessable Entity", "44:%d", rt); 
+            send_response(client_fd, 422, "Unprocessable Entity", NULL, "44:%d", rt); 
             free(req.username);
             free(req.passwd);
             free(req.signup_salt);
@@ -222,7 +222,7 @@ void http_serve(void) {
         }
 
         DXhttp_print_debug("User %s successful", postType_str );
-        send_response(client_fd, 200, "OK", NULL);
+        send_response(client_fd, 200, "OK", NULL, NULL);
         free(req.username);
         free(req.passwd);
         free(req.signup_salt);

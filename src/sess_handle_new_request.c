@@ -18,10 +18,15 @@ int sess_handle_new_request(struct redis_config *redis_conf, struct session_requ
             DXhttp_print_debug("set key error:%d", rt );
             return 161010 ;
         }
-        send_response_with_new_tmp_sess(client_fd, 200, signup_sess, signup_sesv);
+
+        //char buf[101] ; snprintf(buf, 100, "%s_sess=%s; HttpOnly; Max-Age=300", postType_str, signup_sess );
+        //char *strArr[] = { buf, NULL } ;
+        //send_response(client_fd, 200, "OK", strArr, "{\"ver\": 1, \"login_sess\": \"%s\", \"login_salt\": \"%s\"}", signup_sesv, login_salt) ;
+        send_response_sess3(client_fd, signup_sess, signup_sesv, login_salt);
+
         return 0 ;
     }
-    send_response_with_new_tmp_sess(client_fd, 200, signup_sess, signup_sesv);
+    send_response_sess2(client_fd, signup_sess, signup_sesv);
 
     return 0 ;
 }

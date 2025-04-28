@@ -18,7 +18,7 @@ src/redis_get_int.c
 src/redis_increment.c
 src/redis_set_hset_key_value.c
 src/send_response.c
-src/send_response_with_new_signup_sess.c
+src/send_response_sess.c
 src/server.c
 src/sess_handle_new_request.c
 src/string_check_a2f_0to9.c

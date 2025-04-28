@@ -116,14 +116,13 @@ bool parse_session_json(const char *body, struct session_request *req);
 bool validate_username(const char *username);
 bool validate_passwd(const char *passwd);
 bool validate_signup_salt(const char *salt) ;
-void send_response(int client_fd, int status, const char *status_text, const char *return_fmt, ...) ;
+void send_response(int client_fd, int status, const char *status_text, char * cookieArr[], const char *fmt, ...) ;
 char *http_get_client_ip(int client_fd, const char *buffer);
 
 /* Thread functions */
 void *thread_worker(void *arg);
 
 void gen_a_new_md5sum_hex_32byte(char *output) ;
-void send_response_with_new_tmp_sess(int client_fd, int status, const char *signup_sess, const char *signup_sesv) ;
 
 int get_executable_md5(unsigned char *md5_digest) ;
 char *get_executable_md5_hex(void) ;
@@ -134,5 +133,7 @@ int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, cons
 int redis_set_hset_key_value(struct redis_config *conf, int databaseIdx, int TTL, const char *fmt, ... ) ;
 int check_post_type_path(char *buffer, size_t n) ;
 int sess_handle_new_request(struct redis_config *conf, struct session_request *req , int client_fd ) ;
+void send_response_sess2(int client_fd, char *sess, char *sesv ) ;
+void send_response_sess3(int client_fd, char *sess, char *sesv, char *salt ) ;
 
 #endif /* COMMON_H */
