@@ -33,32 +33,32 @@ int redis_set_hset_key_value(struct redis_config *conf, int databaseIdx, int TTL
     redisReply *reply;
     reply = redisCommand(ctx, cmdBuf);
     if (!reply) {
-        DXprint_debug("Redis 135007 [%s] error: !reply", cmdBuf);
+        DXprint_debug("Redis 135007 (%d)[%s] error: !reply", databaseIdx, cmdBuf);
         redisFree(ctx); ctx = NULL;
         return 135008;
     }
     
     if (reply->type == REDIS_REPLY_ERROR) {
-        DXprint_debug("Redis 135010 ERROR: [%s] -> [%s]", cmdBuf, reply->str);
+        DXprint_debug("Redis 135010 ERROR: (%d)[%s] -> [%s]", databaseIdx, cmdBuf, reply->str);
         freeReplyObject(reply);
         return 135011;
     }
     
     // Check if the main command succeeded
     if (reply->type != REDIS_REPLY_STATUS && reply->type != REDIS_REPLY_INTEGER) {
-        DXprint_debug("Redis 135025 Command error: reply->type(%d) unexpected response for [%s]", 
-                    reply->type, cmdBuf);
+        DXprint_debug("Redis 135025 Command error: reply->type(%d) unexpected response for (%d)[%s]", 
+                    reply->type, databaseIdx, cmdBuf);
         freeReplyObject(reply);
         return 135026;
     }
     
     // Main command succeeded - log it
     if (reply->type == REDIS_REPLY_STATUS) {
-        DXprint_debug("Redis 135015 Command succeeded: reply->type(%d) : got [%s] for [%s]", 
-                    reply->type, reply->str, cmdBuf);
+        DXprint_debug("Redis 135015 Command succeeded: reply->type(%d) : got [%s] for (%d)[%s]", 
+                    reply->type, reply->str, databaseIdx, cmdBuf);
     } else {
-        DXprint_debug("Redis 135016 Command succeeded: reply->type(%d) : got [%ld] for [%s]", 
-                    reply->type, reply->integer, cmdBuf);
+        DXprint_debug("Redis 135016 Command succeeded: reply->type(%d) : got [%ld] for (%d)[%s]", 
+                    reply->type, reply->integer, databaseIdx, cmdBuf);
     }
     
     // Early return if we don't need to set TTL separately
@@ -75,14 +75,14 @@ int redis_set_hset_key_value(struct redis_config *conf, int databaseIdx, int TTL
     char *keyEnd = strchr(keyStart, ' ');
     
     if (!keyEnd) {
-        DXprint_debug("Redis 135020 Cannot extract key for EXPIRE from [%s]", cmdBuf);
+        DXprint_debug("Redis 135020 Cannot extract key for EXPIRE from (%d)[%s]", databaseIdx, cmdBuf);
         freeReplyObject(reply);
         return 135027;
     }
     
     size_t keyLen = keyEnd - keyStart;
     if (keyLen >= sizeof(keyBuf)) {
-        DXprint_debug("Redis 135021 Key too long for EXPIRE from [%s]", cmdBuf);
+        DXprint_debug("Redis 135021 Key too long for EXPIRE from (%d)[%s]", databaseIdx, cmdBuf);
         freeReplyObject(reply);
         return 135028;
     }
@@ -102,19 +102,19 @@ int redis_set_hset_key_value(struct redis_config *conf, int databaseIdx, int TTL
     }
     
     if (reply->type == REDIS_REPLY_ERROR) {
-        DXprint_debug("Redis 135014 EXPIRE ERROR: [%s %d] -> [%s]", keyBuf, TTL, reply->str);
+        DXprint_debug("Redis 135014 EXPIRE ERROR: (%d)[%s %d] -> [%s]", databaseIdx, keyBuf, TTL, reply->str);
         freeReplyObject(reply);
         return 135015;
     }
     
     if (reply->type != REDIS_REPLY_INTEGER || reply->integer != 1) {
-        DXprint_debug("Redis 135017 EXPIRE failed: reply->type(%d) : got [%ld] for EXPIRE %s %d", 
-                    reply->type, reply->integer, keyBuf, TTL);
+        DXprint_debug("Redis 135017 EXPIRE failed: reply->type(%d) : got [%ld] for (%d)EXPIRE %s %d", 
+                    reply->type, reply->integer, databaseIdx, keyBuf, TTL);
         freeReplyObject(reply);
         return 135018;
     }
     
-    DXprint_debug("Redis 135019 EXPIRE succeeded for key [%s] with TTL %d", keyBuf, TTL);
+    DXprint_debug("Redis 135019 EXPIRE succeeded for key (%d)[%s] with TTL %d", databaseIdx, keyBuf, TTL);
     
     // Clean up and return success
     freeReplyObject(reply);

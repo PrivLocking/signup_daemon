@@ -184,49 +184,61 @@ void http_serve(void) {
             close(client_fd);
             continue;
         }
-        DXhttp_print_debug("Username check ok, exist. can do more check on %s to see if salt/hash is correct.", postType_str );
+        DXhttp_print_debug("Username check : exist. Now, do more check on %s to see if salt/hash is correct.", postType_str );
 
         /* in this case, dbSavedVerifyTmpSalt == verifyTmpValue, no more check/calc, just save it.
         char hash[HASH_LEN + 1], salt[SALT_LEN + 1];
         if (! compute_signup_hash2(req.username, req.passwd, hash, salt)) { */
 
-        rt = redis_set_hset_key_value(redis_conf, DbIdx_ipCountX, SIGNUP_OK_TTL, "SET signupOK:%s 1", ip);
-        if ( rt ) {
-            DXhttp_print_debug("[SET %sOK:%s 1 EX %d] failed, rt-> %d ", postType_str, ip, SIGNUP_OK_TTL, rt);
-            send_response(client_fd, 422, "Unprocessable Entity", NULL, "34:%d", rt); 
-            free(req.username);
-            free(req.passwd);
-            free(req.signup_salt);
-            free(ip);
-            close(client_fd);
-            continue;
-        }
-
         if ( 0 == postType_0signup_1login_2_admin ) {
+            rt = redis_set_hset_key_value(redis_conf, DbIdx_ipCountX, SIGNUP_OK_TTL, "SET signupOK:%s 1", ip);
+            if ( rt ) {
+                DXhttp_print_debug("[SET %sOK:%s 1 EX %d] failed, rt-> %d ", postType_str, ip, SIGNUP_OK_TTL, rt);
+                send_response(client_fd, 422, "Unprocessable Entity", NULL, "34:%d", rt); 
+                free(req.username);
+                free(req.passwd);
+                free(req.signup_salt);
+                free(ip);
+                close(client_fd);
+                continue;
+            }
+
             //rt = redis_hset_key_value_pair( redis_conf, DatabaseIdx_salt_Login, &tmpLong, NEW_USER_TTL_30d,
             //        "HSET loginUser:%s hash %s salt %s level 0 status active", req.username, req.passwd, req.signup_salt);
             rt = redis_set_hset_key_value( redis_conf, DatabaseIdx_salt_Login, NEW_USER_TTL_30d,
                     "HSET loginUser:%s hash %s salt %s level 0 status active", req.username, req.passwd, req.signup_salt);
+            if ( rt ) {
+                DXhttp_print_debug("HSET for %s failed, rt-> %d", postType_str, rt );
+                send_response(client_fd, 422, "Unprocessable Entity", NULL, "44:%d", rt); 
+                free(req.username);
+                free(req.passwd);
+                free(req.signup_salt);
+                free(ip);
+                close(client_fd);
+                continue;
+            }
+            send_response(client_fd, 200, "OK", NULL, NULL);
+
         } else {
             rt = 8388188 ; // under constructing
-        }
-        if ( rt ) {
-            DXhttp_print_debug("HSET failed, rt-> %d ", rt);
-            send_response(client_fd, 422, "Unprocessable Entity", NULL, "44:%d", rt); 
-            free(req.username);
-            free(req.passwd);
-            free(req.signup_salt);
-            free(ip);
-            close(client_fd);
-            continue;
+            if ( rt ) {
+                DXhttp_print_debug("HSET for %s failed, rt-> %d", postType_str, rt );
+                send_response(client_fd, 422, "Unprocessable Entity", NULL, "54:%d", rt); 
+                free(req.username);
+                free(req.passwd);
+                free(req.signup_salt);
+                free(ip);
+                close(client_fd);
+                continue;
+            }
+            send_response(client_fd, 200, "OK", NULL, NULL);
         }
 
         DXhttp_print_debug("User %s successful", postType_str );
-        send_response(client_fd, 200, "OK", NULL, NULL);
         free(req.username);
         free(req.passwd);
         free(req.signup_salt);
         free(ip);
         close(client_fd);
-    }
+    } // end of while loop
 }

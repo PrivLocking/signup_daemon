@@ -17,12 +17,12 @@ int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, cons
     redisReply *reply;
     reply = redisCommand(ctx, cmdBuf);
     if (!reply) {
-        DXprint_debug("Redis 129007 [%s] error: !reply", cmdBuf);
+        DXprint_debug("Redis 129007 (%d)[%s] error: !reply", databaseIdx, cmdBuf);
         redisFree(ctx); ctx = NULL;
         return 129008;
     }
     if (reply->type == REDIS_REPLY_ERROR) {
-        DXprint_debug("Redis 129010 ERROR: [%s] -> [%s]", cmdBuf, reply->str);
+        DXprint_debug("Redis 129010 ERROR: (%d)[%s] -> [%s]", databaseIdx, cmdBuf, reply->str);
         freeReplyObject(reply);
         return 129011;
     }
@@ -30,8 +30,8 @@ int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, cons
     // Handle direct integer reply
     if (reply->type == REDIS_REPLY_INTEGER) {
         *dstInt = reply->integer;
-        DXprint_debug("Redis 129015 Command int succeed: reply->type(%d) : get [%ld] by [%s]: REDIS_TYPE", 
-                    reply->type, *dstInt, cmdBuf);
+        DXprint_debug("Redis 129015 Command int succeed: reply->type(%d) : get [%ld] by (%d)[%s]: REDIS_TYPE", 
+                    reply->type, *dstInt, databaseIdx, cmdBuf);
         freeReplyObject(reply);
         return 0;
     }
@@ -39,7 +39,7 @@ int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, cons
     // Handle string replies that need conversion to int
     if (reply->type == REDIS_REPLY_STRING) {
         if (!reply->str) {
-            DXprint_debug("Redis 129025 Command int error: reply->str == null : [%s]", cmdBuf);
+            DXprint_debug("Redis 129025 Command int error: reply->str == null : (%d)[%s]", databaseIdx, cmdBuf);
             freeReplyObject(reply);
             return 129026;
         }
@@ -50,21 +50,21 @@ int redis_get_int(struct redis_config *conf, int databaseIdx, long *dstInt, cons
         
         // Check for conversion errors
         if (errno != 0 || *endptr != '\0' || reply->str == endptr) {
-            DXprint_debug("Error: 129035 Redis reply cannot be converted to a valid integer! [%s]", cmdBuf);
+            DXprint_debug("Error: 129035 Redis reply cannot be converted to a valid integer! (%d)[%s]", databaseIdx, cmdBuf);
             freeReplyObject(reply);
             return 129036;
         }
 
         *dstInt = value;
-        DXprint_debug("Sent: 129045 Command int: [%s] | Received(long int): %ld", cmdBuf, *dstInt);
+        DXprint_debug("Sent: 129045 Command int: (%d)[%s] | Received(long int): %ld", databaseIdx, cmdBuf, *dstInt);
         
         freeReplyObject(reply);
         return 0;
     }
 
     // Handle case where reply is neither an integer nor a string
-    DXprint_debug("Redis 129050 Command error: reply->type(%d) not INTEGER or STRING : [%s]", 
-                reply->type, cmdBuf);
+    DXprint_debug("Redis 129050 Command error: reply->type(%d) not INTEGER or STRING : (%d)[%s]", 
+                reply->type, databaseIdx, cmdBuf);
     freeReplyObject(reply);
     return 129051;
 }
