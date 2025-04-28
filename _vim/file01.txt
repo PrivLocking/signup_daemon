@@ -31,6 +31,7 @@ signup_html/password_input.js
 signup_html/ui_listener.js
 signup_html/signup.css
 signup_html/env.js
+signup_html/cookie_get.js
 signup_html/password_listener.js
 signup_html/validators.js
 signup_html/password.js

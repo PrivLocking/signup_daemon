@@ -91,6 +91,7 @@ int get_executable_md5(unsigned char *md5_digest) {
 }
 
 char execBinaryMd5[33] = "errorExecBinaryMD5";
+char execBinaryMd5cookie[33] = "MD5=Error";
 char *get_executable_md5_hex(void) {
     static unsigned char md5_digest[EVP_MAX_MD_SIZE];
     char * p = execBinaryMd5 ;
@@ -100,6 +101,7 @@ char *get_executable_md5_hex(void) {
             p += 2 ;
         }
         execBinaryMd5[32] = 0 ;
+        snprintf( execBinaryMd5cookie, 32, "MD5=%.6s", execBinaryMd5+26 );
     }
     DBprint_debug("Executable file's md5 is [%s]\n", execBinaryMd5 );
     return execBinaryMd5;

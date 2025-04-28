@@ -1,7 +1,9 @@
 #include "common.h"
 
 static char buf1[101] ; 
-static char *strArr1[] = { buf1, NULL } ;
+extern char execBinaryMd5cookie[] ;
+static char *strArr1[] = { execBinaryMd5cookie, buf1, NULL } ;
+char *strArr0[] = { execBinaryMd5cookie, NULL } ;
 
 void send_response_sess2(int client_fd, char *sess, char *sesv ) {
     snprintf(buf1, 100, "%s_sess=%s; HttpOnly; Max-Age=300", postType_str, sess );

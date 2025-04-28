@@ -42,6 +42,7 @@ void send_response(int client_fd, int status, const char *status_text, char * co
             status, status_text
             );
 
+    // if ( NULL == cookieArr && 422 == status ){ extern char *strArr0[] ; cookieArr = strArr0 ; }
     if ( NULL != cookieArr ) {
         for (int i = 0; cookieArr[i] != NULL; i++) {  // Check each string for NULL
             offset += snprintf(response + offset, RESPONSE_BUFFER_SIZE - offset,

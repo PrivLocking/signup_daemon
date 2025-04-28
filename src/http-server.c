@@ -132,7 +132,7 @@ void http_serve(void) {
         DXhttp_print_debug("nor-Empty req, need more analyze." );
 
         char dbSavedVerifyTmpSalt[33] ;
-        rt = redis_get_hget_string(redis_conf, DbIdx_ipCountX, 32, dbSavedVerifyTmpSalt, "GET %s_sess:%s", postType_str, req.signup_salt ) ;
+        rt = redis_get_hget_string(redis_conf, DbIdx_ipCountX, 32, dbSavedVerifyTmpSalt, "GET %s_sess:%s:%s", postType_str, req.username, req.signup_salt ) ;
         if ( rt ) {
             DXhttp_print_debug("no such a %s salt found! :%d" , postType_str, rt);
             send_response(client_fd, 422, "Unprocessable Entity", NULL, "16:%d", rt );
@@ -174,7 +174,7 @@ void http_serve(void) {
         long tmpLong ;
         tmpLong = -1 ;
         rt = redis_get_int(redis_conf, DatabaseIdx_salt_Login, &tmpLong, "EXISTS %sUser:%s", postType_str, req.username ) ;
-        if ( rt || (tmpLong != 0 )) {
+        if ( rt || (tmpLong != 1 )) {
             DXhttp_print_debug("Username check failed, or already exist for %s, rt-> %d, tmpLong -> %ld", req.username, rt, tmpLong );
             send_response(client_fd, 422, "Unprocessable Entity", NULL, "24:%d:%ld", rt, tmpLong); // failed , or username exist,
             free(req.username);
@@ -184,7 +184,7 @@ void http_serve(void) {
             close(client_fd);
             continue;
         }
-        DXhttp_print_debug("Username check ok, not exist. can %s if salt/hash is correct.", postType_str );
+        DXhttp_print_debug("Username check ok, exist. can do more check on %s to see if salt/hash is correct.", postType_str );
 
         /* in this case, dbSavedVerifyTmpSalt == verifyTmpValue, no more check/calc, just save it.
         char hash[HASH_LEN + 1], salt[SALT_LEN + 1];

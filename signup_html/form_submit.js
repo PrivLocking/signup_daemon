@@ -61,7 +61,12 @@ async function handleFormSubmit() {
         if (status === 422) {
             const body = await response.text();
             //extraCode = parseInt(body, 10) || 0;
-            extraCode = body ;
+            const md5 = get_cookie_md5_6() ;
+            if ( null != md5 ) {
+                extraCode = "[" + md5 + "]:" + body ;
+            } else {
+                extraCode = body ;
+            }
         }
 
         if (status === 200) {
