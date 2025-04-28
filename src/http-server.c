@@ -95,7 +95,7 @@ void http_serve(void) {
         body += 4;
 
         int len = strlen(body);
-        DXhttp_print_debug("body len (%d):[%.20s]", len, body);
+        DXhttp_print_debug("body len (%d):[%.40s]", len, body);
         // to combine signup/login, the empty body change from '{}' to '{"ver":1}'
         /*
         if (2 == len && '{' == body[0] && '}' == body[1]) { // {}
