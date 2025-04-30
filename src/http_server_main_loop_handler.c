@@ -71,31 +71,33 @@ int http_server_main_loop_handler( char **ip, struct redis_config *redis_conf, i
         send_response(*client_fd, 422, "Unprocessable Entity", NULL, "38:%d", rt );
         return 211071;
     }
-    DXhttp_print_debug(" dbSavedVerifyTmpSalt [%s], verifyTmpValue [%s]", dbSavedVerifyTmpSalt, verifyTmpValue);
 
     rt = strncmp( dbSavedVerifyTmpSalt, verifyTmpValue, 33 );
     if ( 0 != rt ) {
         DXhttp_print_debug(" dbSavedVerifyTmpSalt[%s] and verifyTmpValue[%s] not equal", dbSavedVerifyTmpSalt, verifyTmpValue );
         send_response(*client_fd, 422, "Unprocessable Entity", NULL, "39");
+        DXhttp_print_debug(" dbSavedVerifyTmpSalt [%s], verifyTmpValue [%s] : not equal. failed.", dbSavedVerifyTmpSalt, verifyTmpValue);
         return 211081;
     }
+    DXhttp_print_debug(" dbSavedVerifyTmpSalt [%s], verifyTmpValue [%s] : equal. ok.", dbSavedVerifyTmpSalt, verifyTmpValue);
 
     //rt = redis_check_username(req->username, redis_conf) ;
     long tmpLong ;
     tmpLong = -1 ;
     rt = redis_get_int(redis_conf, DatabaseIdx_salt_Login, &tmpLong, "EXISTS %sUser:%s", postType_str, req->username ) ;
-    if ( rt || (tmpLong != 1 )) {
+    if ( rt ) {
         DXhttp_print_debug("Username check failed, or already exist for %s, rt-> %d, tmpLong -> %ld", req->username, rt, tmpLong );
         send_response(*client_fd, 422, "Unprocessable Entity", NULL, "24:%d:%ld", rt, tmpLong); // failed , or username exist,
         return 211091;
     }
-    DXhttp_print_debug("Username check : exist. Now, do more check on %s to see if salt/hash is correct.", postType_str );
 
     /* in this case, dbSavedVerifyTmpSalt == verifyTmpValue, no more check/calc, just save it.
        char hash[HASH_LEN + 1], salt[SALT_LEN + 1];
        if (! compute_signup_hash2(req->username, req->passwd, hash, salt)) { */
 
     if ( 0 == postType_0signup_1login_2_admin ) {
+        DXhttp_print_debug("Username check : exist. Now, all check on %s is done. Now, set signupOK(%d):%s & loginUser:%s(%d).", 
+                postType_str, DbIdx_ipCountX, ip, req->username, DatabaseIdx_salt_Login  );
         rt = redis_set_hset_key_value(redis_conf, DbIdx_ipCountX, SIGNUP_OK_TTL, "SET signupOK:%s 1", ip);
         if ( rt ) {
             DXhttp_print_debug("[SET %sOK:%s 1 EX %d] failed, rt-> %d ", postType_str, ip, SIGNUP_OK_TTL, rt);
@@ -115,6 +117,7 @@ int http_server_main_loop_handler( char **ip, struct redis_config *redis_conf, i
         send_response(*client_fd, 200, "OK", NULL, NULL);
 
     } else {
+        DXhttp_print_debug("Username check : exist. Now, do more check on %s to see if salt/hash is correct.", postType_str );
         rt = 8388188 ; // under constructing
         if ( rt ) {
             DXhttp_print_debug("HSET for %s failed, rt-> %d", postType_str, rt );

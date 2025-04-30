@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     struct redis_config redis_conf = {
         .path = DEFAULT_REDIS_PATH,
         .is_unix = true,
-        .password = DEFAULT_REDIS_PASSWD,
+        .password = DEFAULT_REDISCLI_AUTH,
         .debug_mode = false
     };
 

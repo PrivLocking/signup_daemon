@@ -1,10 +1,10 @@
 Makefile
+src/calc_hash_passwd_argon.c
 src/check_post_type_path.c
 src/common.h
 src/cookie_extract.c
 src/gen_a_new_md5sum_hex_32byte.c
 src/get_executable_md5.c
-src/hash.c
 src/http_get_client_ip.c
 src/http_main_loop_clean_before_exit.c
 src/http_parser.c

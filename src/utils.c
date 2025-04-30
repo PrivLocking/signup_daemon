@@ -13,7 +13,7 @@ static void print_defaults(bool print_current, bool debug_mode, struct redis_con
         "DEFAULT_SOCKET_PATH",
         "DEFAULT_REDIS_PATH",
         "DEFAULT_THREADS",
-        "DEFAULT_REDIS_PASSWD",
+        "DEFAULT_REDISCLI_AUTH",
         NULL
     };
 
@@ -30,8 +30,8 @@ static void print_defaults(bool print_current, bool debug_mode, struct redis_con
             printf("%s = %s\n", defaults[i], print_current ? redis->path : DEFAULT_REDIS_PATH);
         } else if (strcmp(defaults[i], "DEFAULT_THREADS") == 0) {
             printf("%s = %d\n", defaults[i], print_current ? *threads : DEFAULT_THREADS);
-        } else if (strcmp(defaults[i], "DEFAULT_REDIS_PASSWD") == 0) {
-            printf("%s = %s\n", defaults[i], print_current ? redis->password : DEFAULT_REDIS_PASSWD);
+        } else if (strcmp(defaults[i], "DEFAULT_REDISCLI_AUTH") == 0) {
+            printf("%s = %s\n", defaults[i], print_current ? redis->password : DEFAULT_REDISCLI_AUTH);
         }
     }
 }
@@ -53,9 +53,9 @@ bool parse_args(int argc, char *argv[], bool *debug, int *threads, struct redis_
     int opt;
     *debug = false;
     *threads = DEFAULT_THREADS;
-    redis->password = strdup(DEFAULT_REDIS_PASSWD);
+    redis->password = strdup(DEFAULT_REDISCLI_AUTH);
 
-    char *env_passwd = getenv("REDIS_PASSWD");
+    char *env_passwd = getenv("REDISCLI_AUTH");
     if (env_passwd) {
         free(redis->password);
         redis->password = strdup(env_passwd);

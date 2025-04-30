@@ -12,7 +12,7 @@ endif
 # hash.c  http-parser.c  http-server.c  http-utils.c  main.c  redis-ip.c  redis-store.c  redis-user.c  redis.c  server.c  utils.c
 source0 := src/cookie_extract.c
 source1 := src/gen_a_new_md5sum_hex_32byte.c
-source2 := src/hash.c
+source2 := src/calc_hash_passwd_argon.c
 source3 := src/http_get_client_ip.c
 source4 := src/http_parser.c
 source5 := src/http_server_main_loop.c

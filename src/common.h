@@ -26,7 +26,7 @@
 #define PASSWD_LEN 64
 #define SALT_LEN 32
 #define HASH_LEN 96
-#define DEFAULT_REDIS_PASSWD "default_captcha_passwd"
+#define DEFAULT_REDISCLI_AUTH "default_captcha_passwd"
 #define REDIS_TYPE "STRING:1, ARRAY:2, INTEGER:3, NIL:4, STATUS(OK):5, ERROR:6" 
 // REDIS_REPLY_STRING REDIS_REPLY_INTEGER 
 
