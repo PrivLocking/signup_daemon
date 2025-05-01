@@ -141,16 +141,11 @@ int http_server_main_loop_handler( char **ip, struct redis_config *redis_conf, i
             return 211140;
         }
 
-        /* in this case, dbSavedVerifyTmpSalt == verifyTmpValue, no more check/calc, just save it.
-           char hash[HASH_LEN + 1], salt[SALT_LEN + 1];
-           if (! compute_signup_hash2(req->username, req->passwd, hash, salt)) { */
         extern int calc_hash_for_login( char *username, char *login_sess, char *storage_hash, char *trying_hash );
         rt = calc_hash_for_login( req->username, req->signup_salt, hash , req->passwd );
-
-        rt = 8388188 ; // under constructing
         if ( rt ) {
-            DXhttp_print_debug("HSET for %s failed, rt-> %d", postType_str, rt );
-            send_response(*client_fd, 422, "Unprocessable Entity", NULL, "54:%d", rt); 
+            DXhttp_print_debug("client (%s) submit a mis-match hash. failed. rt-> %d", postType_str, rt );
+            send_response(*client_fd, 422, "Unprocessable Entity", NULL, "54:%d:%d", rt, 211121); 
             return 211121;
         }
         send_response(*client_fd, 200, "OK", NULL, NULL);

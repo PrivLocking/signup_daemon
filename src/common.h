@@ -25,7 +25,6 @@
 #define USERNAME_MAX_LEN 20
 #define PASSWD_LEN 64
 #define SALT_LEN 32
-#define HASH_LEN 64
 #define DEFAULT_REDISCLI_AUTH "default_captcha_passwd"
 #define REDIS_TYPE "STRING:1, ARRAY:2, INTEGER:3, NIL:4, STATUS(OK):5, ERROR:6" 
 // REDIS_REPLY_STRING REDIS_REPLY_INTEGER 
@@ -53,6 +52,7 @@
 #include <stdbool.h>
 #include <argon2.h>
 #include <openssl/rand.h>
+#include <openssl/sha.h>
 #include <threads.h>
 
 /* Data structures */

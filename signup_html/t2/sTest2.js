@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show generate button once Argon2 is ready
     generateSessionButton.style.display = 'none';
+    generateLoginSessionButton.style.display = 'none';
   });
 
   // Generate random hex string

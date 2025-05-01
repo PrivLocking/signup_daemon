@@ -41,11 +41,15 @@ and compare the result,
 4.4.2.2 : and set cookie: Path:/ login_auth=XXXXX, 18000s
 the above is my signup and login solution to keep user password safe. analyze it for me ? is there obversiual problem ?
 */
-int compute_signup_hash2(char *input, char* salt, char *rtBuf) {
-    if ( !input || !salt || !rtBuf ) return 242011;
 
+static thread_local char rtBuf[SHA256_DIGEST_LENGTH * 2 + 1] ;
+int compute_signup_hash2(char *input, char* salt, char **rtBufLP) {
+    if ( !input || !salt || !rtBufLP ) return 242011;
+    *rtBufLP = rtBuf ;
+
+    DXhttp_print_debug("salt:[%s], input:[%s]" , salt, input );
     //salt = "argon2saltsalt" ; // the javascript use a default value argon2saltsalt if the global var argon2saltsalt is not found.
-    uint8_t hash_bytes[HASH_LEN / 2];
+    uint8_t hash_bytes[SHA256_DIGEST_LENGTH];
     if (argon2id_hash_raw(
                 2, // // Number of iterations
                 // 1 << 16, // Memory cost in KiB : 1<<16 == 65536(KiB) == 64MiB
@@ -58,10 +62,22 @@ int compute_signup_hash2(char *input, char* salt, char *rtBuf) {
         return 242011;
     }
 
+    char tmpBuf[SHA256_DIGEST_LENGTH*2+1]; // Added char type declaration
     for (size_t i = 0; i < sizeof(hash_bytes); i++) {
-        snprintf(rtBuf + i * 2, 3, "%02x", hash_bytes[i]);
+        snprintf(tmpBuf + i * 2, 3, "%02x", hash_bytes[i]);
     }
-    rtBuf[HASH_LEN] = '\0';
+    tmpBuf[SHA256_DIGEST_LENGTH*2] = '\0';
+    DXhttp_print_debug("tmpBuf:[%s]" , tmpBuf );
+
+    // Calculate SHA-256 hash of tmpBuf using the one-shot function
+    unsigned char sha256_hash[SHA256_DIGEST_LENGTH];
+    SHA256((unsigned char*)tmpBuf, strlen(tmpBuf), sha256_hash);
+
+    // Convert binary SHA-256 hash to hex string and store in rtBuf
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        snprintf(rtBuf + i * 2, 3, "%02x", sha256_hash[i]);
+    }
+    rtBuf[SHA256_DIGEST_LENGTH * 2] = '\0';
 
     return 0;
 }

@@ -22,7 +22,7 @@ function handleSignupSuccess(submitButton, messageElement, messages) {
             if (countdownElement) countdownElement.textContent = timeLeft;
             if (timeLeft <= 0) {
                 clearInterval(countdown);
-                window.location.href = "/login/";
+                window.location.href = funcSucceed;
             }
         }, 1000);
     }
