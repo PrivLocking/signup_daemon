@@ -12,6 +12,7 @@ async function calc_passHash( jsonOBJ ) {
 
     // Generate Argon2 hash using signup_session + username + sha256(passwd)
     const argonInput1 = `${salt1}:${realUsername}:${realPassword}`;
+    argon2saltsalt = salt1 ;
     const passwdHash1 = await calc_passHash_ArgonSha256( argonInput1 );
     if ( !passwdHash1 ) {
         return null ;
@@ -30,6 +31,7 @@ async function calc_passHash( jsonOBJ ) {
     const salt2 = jsonGetHex32( jsonOBJ, "login_sess" );
 
     const argonInput2 = `${salt2}:${realUsername}:${passwdHash1}`;
+    argon2saltsalt = salt2 ;
     const passwdHash2 = await calc_passHash_ArgonSha256( argonInput2 );
     if ( !passwdHash2 ) {
         return null ;

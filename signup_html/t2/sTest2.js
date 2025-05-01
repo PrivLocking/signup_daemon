@@ -132,6 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('salt-username-pwd').textContent = saltUsernamePwd;
 
       // Step 2: Calculate Argon2 hash
+      argon2saltsalt = signupSession;
       const argon2Hash = argon2_calc(saltUsernamePwd, getArgon2Config());
       document.getElementById('argon2-hash').textContent = argon2Hash;
 
@@ -180,6 +181,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('login-salt-username-pwd').textContent = saltUsernamePwd;
 
       // Step 2: Calculate Argon2 hash of saltUsernamePwd
+      argon2saltsalt = signupSession;
       const argon2Hash = argon2_calc(saltUsernamePwd, getArgon2Config());
       document.getElementById('login-argon2-hash').textContent = argon2Hash;
 
@@ -192,6 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('login-session-hash').textContent = loginSessionHash;
 
       // Step 5: Calculate Argon2 hash of loginSessionHash
+      argon2saltsalt = loginSession;
       const loginArgon2Hash = argon2_calc(loginSessionHash, getArgon2Config());
       document.getElementById('login-argon2-final').textContent = loginArgon2Hash;
 

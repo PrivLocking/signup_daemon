@@ -1,4 +1,5 @@
 Makefile
+src/calc_hash_for_login.c
 src/calc_hash_passwd_argon.c
 src/check_post_type_path.c
 src/common.h
@@ -63,3 +64,4 @@ admin_html/main.js
 admin_html/create-admins.html
 admin_html/view-audit-logs.html
 admin_html/main.css
+js/load_argon2.js

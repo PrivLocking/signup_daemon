@@ -41,28 +41,27 @@ and compare the result,
 4.4.2.2 : and set cookie: Path:/ login_auth=XXXXX, 18000s
 the above is my signup and login solution to keep user password safe. analyze it for me ? is there obversiual problem ?
 */
-int compute_signup_hash2(const char *username, const char *passwd, char *hash, char *salt) {
-    uint8_t salt_bytes[SALT_LEN / 2];
-    if (RAND_bytes(salt_bytes, sizeof(salt_bytes)) != 1) {
-        return false;
-    }
+int compute_signup_hash2(char *input, char* salt, char *rtBuf) {
+    if ( !input || !salt || !rtBuf ) return 242011;
 
-    for (size_t i = 0; i < sizeof(salt_bytes); i++) {
-        snprintf(salt + i * 2, 3, "%02x", salt_bytes[i]);
-    }
-    salt[SALT_LEN] = '\0';
-
+    //salt = "argon2saltsalt" ; // the javascript use a default value argon2saltsalt if the global var argon2saltsalt is not found.
     uint8_t hash_bytes[HASH_LEN / 2];
-    if (argon2id_hash_raw(2, 1 << 16, 1, passwd, strlen(passwd),
-                          salt_bytes, sizeof(salt_bytes),
-                          hash_bytes, sizeof(hash_bytes)) != ARGON2_OK) {
-        return false;
+    if (argon2id_hash_raw(
+                2, // // Number of iterations
+                // 1 << 16, // Memory cost in KiB : 1<<16 == 65536(KiB) == 64MiB
+                1 << 17, // Memory cost in KiB : 1<<17 == 131072(KiB) == 128MiB
+                2,  // parallelism : Number of threads
+                input, strlen(input),
+                salt, strlen(salt),
+                hash_bytes, sizeof(hash_bytes)
+                ) != ARGON2_OK) {
+        return 242011;
     }
 
     for (size_t i = 0; i < sizeof(hash_bytes); i++) {
-        snprintf(hash + i * 2, 3, "%02x", hash_bytes[i]);
+        snprintf(rtBuf + i * 2, 3, "%02x", hash_bytes[i]);
     }
-    hash[HASH_LEN] = '\0';
+    rtBuf[HASH_LEN] = '\0';
 
-    return true;
+    return 0;
 }

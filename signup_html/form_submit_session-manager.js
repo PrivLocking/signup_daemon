@@ -73,7 +73,11 @@ async function askForNewTmpSession(messageElement, submitButton, messages) {
                 username: realUsername
             }) ;
         } else {
-            bodyX = JSON.stringify({ ver:1 }) ;
+            //bodyX = JSON.stringify({ ver:1 }) ;
+            bodyX = JSON.stringify({
+                ver: 1,
+                username: realUsername
+            }) ;
         }
         const sessionResponse = await fetch(funcName, {
             method: "POST",

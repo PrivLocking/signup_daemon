@@ -35,8 +35,9 @@ sourceP:= src/check_post_type_path.c
 sourceQ:= src/sess_handle_new_request.c
 sourceR:= src/http_main_loop_clean_before_exit.c
 sourceS:= src/http_server_main_loop_handler.c
+sourceT:= src/calc_hash_for_login.c
 
-sourceListIdx:=0 1 2 3 4 5 6 7 8 A D F G H I J K L M N O P Q R S 
+sourceListIdx:=0 1 2 3 4 5 6 7 8 A D F G H I J K L M N O P Q R S T 
 sourceList:=$(foreach ssss,$(sourceListIdx),$(source$(ssss)))
 
 
@@ -134,6 +135,7 @@ vp vim_prepare : vpc
 	find signup_html/ -maxdepth 1 -type f               >> _vim/file01.txt
 	find login_html/  -maxdepth 1 -type f               >> _vim/file01.txt
 	find admin_html/  -maxdepth 1 -type f               >> _vim/file01.txt
+	echo js/load_argon2.js                              >> _vim/file01.txt
 	sed -i -e '/^\.$$/d' -e '/^$$/d'                       _vim/file01.txt
 	cscope -q -R -b -i                                     _vim/file01.txt
 	ctags -L                                               _vim/file01.txt

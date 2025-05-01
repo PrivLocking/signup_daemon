@@ -25,7 +25,7 @@
 #define USERNAME_MAX_LEN 20
 #define PASSWD_LEN 64
 #define SALT_LEN 32
-#define HASH_LEN 96
+#define HASH_LEN 64
 #define DEFAULT_REDISCLI_AUTH "default_captcha_passwd"
 #define REDIS_TYPE "STRING:1, ARRAY:2, INTEGER:3, NIL:4, STATUS(OK):5, ERROR:6" 
 // REDIS_REPLY_STRING REDIS_REPLY_INTEGER 
@@ -102,9 +102,6 @@ bool redis_store_user(const char *username, const char *hash, const char *salt, 
 int redis_increment( struct redis_config *conf, int dbIdx, int TTL, long *dstLong, const char *fmt, ...) ;
 bool redis_connect_thread(struct redis_config *conf, int dbIdx);
 int redis_save_key_to_redis_with_ttl(char databaseIdx, int TTL, const char *str1, const char *str2, const char *val, struct redis_config *conf) ;
-
-/* Hash computation */
-int compute_signup_hash2(const char *username, const char *passwd, char *hash, char *salt);
 
 /* HTTP and server functions */
 void set_redis_config(struct redis_config *conf);

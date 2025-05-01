@@ -49,8 +49,10 @@
       return null;
     }
 
-    try {
-      const salt = "argon2saltsalt"; // 16-byte fixed salt
+    try { 
+      //const salt = "argon2saltsalt"; // 16-byte fixed salt
+      const salt = typeof global.argon2saltsalt !== 'undefined' ? global.argon2saltsalt : "argon2saltsalt"; // Use global var if exists
+
       const password = origin_msg;
 
       const passEncoded = encodeUtf8(password);
